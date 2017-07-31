@@ -26,7 +26,7 @@ Graph::~Graph(){
 	*@param  string path: constains the name of the file
 	*@return void: -
 *********************************************************/
-void Graph::loadFromFile(string path, string apath){
+void Graph::loadFromFile(string path){
 	/*
 		Declaration
 	*/
@@ -99,17 +99,6 @@ void Graph::loadFromFile(string path, string apath){
 	cout << "| Number of merged nodes: " << nMerged << endl;
 	setNumberOfDisconnected();
 	cout << "| Number of disconnected nodes: " << nDisconnected << endl;
-	//ofstream output("[i] Criterio1.txt");
-	//output << nNodes << endl;
-	//for (int u = 0; u < nNodes; u++)
-	//	output << u + 1 << " " << sizes[u] << "\n";
-	//input.close();
-
-	/*input.open(apath.c_str());
-	while (input >> origin >> size){
-		amountReached[origin - 1] = size;
-	}
-	input.close();*/
 }
 
 void Graph::setNumberOfDisconnected(){
@@ -211,43 +200,6 @@ void Graph::breadthSearch(Tree *tree, int n, double cut){
 	}
 }
 
-/*struct est{
-	float chave;
-	int id;
-} typedef node;
-
-void heapfy(node *v, int ind, int tam){
-	int maior = ind;
-	int esq = 2 * ind + 1;
-	int dir = 2 * ind + 2;
-	if (esq < tam && v[ind].chave > v[esq].chave){
-		maior = esq;
-	}
-	if (dir < tam && v[maior].chave > v[dir].chave){
-		maior = dir;
-	}
-	if (maior != ind){
-		node aux = v[ind];
-		v[ind] = v[maior];
-		v[maior] = aux;
-		heapfy(v, maior, tam);
-	}
-}
-
-void heapSort(node* v, int tam){
-	for (int i = tam / 2; i >= 0; i--){
-		heapfy(v, i, tam);
-	}
-	while (tam > 0){
-		node aux = v[0];
-		v[0] = v[tam - 1];
-		v[tam - 1] = aux;
-		heapfy(v, 0, tam - 1);
-		tam--;
-	}
-
-}*/
-
 struct est{
 	float chave;
 	int id;
@@ -285,14 +237,34 @@ void heapSort(node* v, int tam){
 
 }
 
-void Graph::getInitialVertexes(list<int> *r, bool criteria, int s){
+void Graph::getInitialVertexes(list<int> *r, int criteria, int s){
 	node *ord = new node[nNodes];
+	ifstream input;
+	switch (criteria){
+		case SIW: break;
+		case DEGREE: break;
+		case RDEGREE:  input.open("criterio2.txt"); break;
+		case CLOSENESS: input.open("criterio3.txt"); break;
+		case RCLOSENESS: input.open("criterio4.txt"); break;
+		case ECCENTRICITY: input.open("criterio5.txt"); break;
+		case RADIAL: input.open("criterio6.txt"); break;
+		default: cout << "An error was found while opening file" << endl;
+	}
+	int temp;
+	if (input.is_open()) // reads first line
+		input >> temp;
+	else
+		cout << "A file was not read" << endl;
 	for (int i = 0; i < nNodes; i++){
-		ord[i].id = i + 1;
 		switch (criteria){
-			case 1: ord[i].chave = sumInversedWeight[i]; break;
-			case 2: ord[i].chave = sizes[i]; break;
-			default: ord[i].chave = sumInversedWeight[i]; break;
+			case SIW: ord[i].id = i + 1; ord[i].chave = sumInversedWeight[i]; break;
+			case DEGREE: ord[i].id = i + 1; ord[i].chave = sizes[i]; break;
+			case RDEGREE: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case CLOSENESS: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case RCLOSENESS: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case ECCENTRICITY: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case RADIAL: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			default: cout << "An error was found during initial vertexes generation" << endl;
 		}
 	}
 	heapSort(ord, nNodes);

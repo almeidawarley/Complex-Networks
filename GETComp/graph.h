@@ -1,6 +1,14 @@
 #include "Tree.h"
 #include "stdafx.h"
 
+#define SIW 0
+#define DEGREE 1
+#define RDEGREE 2 // relative degree
+#define CLOSENESS 3
+#define RCLOSENESS 4 // relative closeness
+#define ECCENTRICITY 5
+#define RADIAL 6
+
 using namespace std;
 
 class Graph{
@@ -25,7 +33,7 @@ class Graph{
     public:
         Graph();
         ~Graph();
-		void loadFromFile(string path, string apath);
+		void loadFromFile(string path);
         float getWeight(int o, int d);
         int getNumberOfNodes();
 		int getNumberOfArcs();
@@ -34,7 +42,7 @@ class Graph{
 		bool isConnected(int n);
 		void breadthSearch(Tree *tree, int n, double cut);
 		void depthSearch(list<int> *depth, int node, int maxSize);
-		void getInitialVertexes(list<int> *r, bool criteria = true, int s = -1);
+		void getInitialVertexes(list<int> *r, int criteria, int s = -1);
 		void print();
 		void setNumberOfDisconnected();
 		int getNumberOfDisconnected();
