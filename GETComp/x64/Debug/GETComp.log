@@ -1,0 +1,42 @@
+﻿Build started 04/08/2017 09:35:55.
+     1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt arc.cpp data.cpp dictionary.cpp funct.cpp GETComp.cpp graph.cpp maxheap.cpp queue.cpp tree.cpp
+         arc.cpp
+         data.cpp
+         dictionary.cpp
+         funct.cpp
+         GETComp.cpp
+     1>GETComp.cpp(173): warning C4244: '+=' : conversion from 'IloNum' to 'int', possible loss of data
+     1>GETComp.cpp(252): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
+     1>GETComp.cpp(381): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(383): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(464): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(465): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(466): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+         graph.cpp
+     1>graph.cpp(261): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>graph.cpp(334): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+         maxheap.cpp
+         queue.cpp
+         tree.cpp
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\GETComp.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\lib\x64_windows_vs2013\stat_mda" /LIBPATH:"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\lib\x64_windows_vs2013\stat_mda" cplex1263.lib ilocplex.lib concert.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\GETComp.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\GETComp.lib" /MACHINE:X64 x64\Debug\arc.obj
+         x64\Debug\data.obj
+         x64\Debug\dictionary.obj
+         x64\Debug\funct.obj
+         x64\Debug\GETComp.obj
+         x64\Debug\graph.obj
+         x64\Debug\maxheap.obj
+         x64\Debug\queue.obj
+         x64\Debug\stdafx.obj
+         x64\Debug\tree.obj
+         GETComp.vcxproj -> C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\GETComp.exe
+     1>Done Building Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:10.67

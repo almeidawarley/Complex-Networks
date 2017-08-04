@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include <windows.h>
 #include <ilcplex/ilocplex.h>
+stringstream colunsg;
 
 #define HI 99999
 #define LI -99999
@@ -75,6 +76,7 @@ void columns(Graph *graph, bool *generatedColumns, Dictionary *allowedNodes, Ilo
 	int initialSize = (int) allowedZ.size();
 	while (!allowedZ.empty()){
 		createColumn(graph, generatedColumns, allowedZ.front(), allowedNodes, R, Z, W, cut, model, false);
+		colunsg << allowedZ.front() << " ";
 		allowedZ.pop_front();
 		utilities.load(initialSize - (int) allowedZ.size(), initialSize, &control);
 	}
@@ -97,16 +99,6 @@ void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int m
 		cout << " _ RINS: "<< cplex.getParam(IloCplex::RINSHeur) << endl;
 		cout << "Using polishing" << endl;
 	}
-
-	//cout <<  "**************************************************************************" << endl;
-	//cout << " | Time limit: " << cplex.getParam(IloCplex::TiLim)  << " seconds" << endl;
-	//cout << " | Memory emphasis: " << cplex.getParam(IloCplex::MemoryEmphasis) << endl;
-	//cout << " | Workable memory: " << cplex.getParam(IloCplex::WorkMem) << " MBs" << endl;
-	//cout << " | MIP Emphashis: " << cplex.getParam(IloCplex::MIPEmphasis) << endl;
-	//cout << " | NodeFileInd: " << cplex.getParam(IloCplex::NodeFileInd) << endl;
-	//cout << " | ColReadLim: " << cplex.getParam(IloCplex::ColReadLim) << endl;
-	//cout << " | RowReadLim: " << cplex.getParam(IloCplex::RowReadLim) << endl;
-	//cout << "**************************************************************************" << endl;
 }
 
 // Z binário, W fracionário, maximiza quantidade de informação recebida (somatório de W) atendendo no máximo maxInf pessoas
@@ -184,7 +176,7 @@ void localBranching(IloRange localB, IloNumArray solucao, IloNumVarArray Z,  Dic
 	localB.setUB(counter-1);
 }
 
-void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solucao, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, bool branching = false){
+void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solucao, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, int criteria, bool branching = false){
 	
 	ofstream dataOutput(append.c_str(), ios::app);
 	QueryPerformanceCounter(&t0);
@@ -262,7 +254,6 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 
 				QueryPerformanceCounter(&t9);
 				stringstream ids;
-				ids << "{";
 				IloNumArray valuesW(env);
 				IloNumArray valuesZ(env);
 				cplex.getValues(Z, valuesZ);
@@ -284,14 +275,14 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				case 2: env.out() << " | maxInf: " << parameter; break;
 				case 3: env.out() << " | percentage: " << parameter * 100 << "%"; break;
 				}
-				env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << endl;
+				env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << "\tinfCut  = " << infCut << endl;
 				if (branching)
 					cout << "Value of folga : " << cplex.getValue(folga) * 500 << endl;
 				env.out() << " > People who received original information:" << endl;
 				for (int i = 0; i < allowedNodes->getSize(); i++){
 					int node = allowedNodes->getNodeByIndex(i);
 					if (generatedColumns[i] && cplex.getValue(Z[i]) > 0.9){
-						ids << node << " - ";
+						ids << node << " ";
 						solucao.add(1);
 						inSolution++;
 						Tree tree;
@@ -327,17 +318,15 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				}
 				printf(" | Reached with merge: %d\t\t\t\tPercentage: %.2f%%\n", counter, ((float)counter / allowedNodes->getSize()) * 100);
 				env.out() << "**************************************************************************" << endl;
-
-				ids << "}";
-
+				
 				QueryPerformanceCounter(&t10);
-				//cout << "S00" << modelNumber << ": " << valuesW << endl;
 
 				dataOutput << modelNumber << "; " << parameter << "; " << initialC << "; " << infCut << "; " << time(&t10, &t0, &freq) << "; ";
 				dataOutput << time(&t2, &t1, &freq) << "; " << time(&t4, &t3, &freq) << "; " << time(&t6, &t5, &freq) << "; " << time(&t8, &t7, &freq) << "; " << time(&t10, &t9, &freq) << "; ";
 				dataOutput << solutionValue << "; " << (float)(sInversedWeight / inSolution) << "; " << minInversedWeight << "; " << maxInversedWeight << "; ";
 				dataOutput << (float)(sTreeSize / inSolution) << "; " << minTreeSize << "; " << maxTreeSize << "; " << ((float)counter / allowedNodes->getSize()) * 100 << "; " << counter << "; ";
-				dataOutput << branching << "; " << iteration << "; " << hasPreviousSolution << "; " << ids.str() << "; " << endl;
+				dataOutput << branching << "; " << iteration << "; " << hasPreviousSolution << "; " << ids.str() << "; " << colunsg.str() << ";" << criteria << ";"<< endl;
+				colunsg.str("");
 			}
 			catch (IloException e){
 				cerr << e << endl;
@@ -358,10 +347,12 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solucao, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float parameter, float infCut, int initialC, int timelimit, string path, int criteria, bool branching  = false){
 	utilities.setBool(generatedColumns, allowedNodes->getSize(), false);
 	columns(graph, generatedColumns, allowedNodes, R, Z, W, infCut, initialC, criteria, modelNumber);
-	solve(modelNumber, model, W, Z, R, solucao, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, branching);
+	solve(modelNumber, model, W, Z, R, solucao, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria, branching);
 	for (int i = 0; i < R.getSize(); i++)
 		R[i].setExpr(W[i]);
 }
+
+
 
 int main(int argc, char **argv){
 
@@ -369,7 +360,6 @@ int main(int argc, char **argv){
 
 	Graph graph;
 	graph.loadFromFile("lorenza.txt");
-	//graph.loadFromFile("ale.txt");
 	Dictionary allowedNodes(graph.getNumberOfNodes());
 
 	IloEnv env;
@@ -388,11 +378,10 @@ int main(int argc, char **argv){
 	model.add(R);
 
 	bool *generatedColumns = new bool[allowedNodes.getSize()];
-	//float percentages[] = { 5, 15, 30,50, 100 };
 	float percentages[] = {0.1, 0.2, 0.3, 0.4, 0.5};
-	int maxInfs[] = { 5, 15, 30, 50, 100 };
-	int maxInf = 10;
+	int maxInfs[] = { 5, 15, 25, 35, 45 };
 	float infCuts[] = { 0.001, 0.005, 0.01, 0.1 };
+	int maxInf = 10;
 
 	//run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, 1000, 30);
 	//run(3, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 0.1, 0.001, 1000, 60*3);
@@ -425,7 +414,7 @@ int main(int argc, char **argv){
 	}*/
 	
 	//Tests for model 1 and 2
-	for (int i = 0; i < 4; i++){
+	/*for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 5; j++){
 			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
 			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
@@ -433,7 +422,7 @@ int main(int argc, char **argv){
 			solucao.clear();
 		}
 	}
-	for (int i = 0; i < 4; i++){
+	for (int i = 1; i < 4; i++){
 		for (int j = 0; j < 5; j++){
 			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
 			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
@@ -465,10 +454,24 @@ int main(int argc, char **argv){
 			solucao.clear();
 		}
 	}
+	*/
+	int tlimit = 30;
+	int ncolumns = 100;
+	string file = "M.csv";
+	for (int c = 0; c < 7; c++){
+		for (int i = 0; i < 4; i++){
+			for (int j = 0; j < 5; j++){
+				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				solucao.clear();
+			}
+		}
+	}
 	//Graph g;
 	//g.loadFromFile("lorenza.txt", "amountReached.txt");
 	//g.getPathSizeAtAllNodes(1291667);
-	//graph.excent(848164); <-
+	graph.excent(1119724); //<-
 	//g.print();
 	//g.brandes();
 	utilities.wait("FIM");
