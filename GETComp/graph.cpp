@@ -237,7 +237,7 @@ void heapSort(node* v, int tam){
 
 }
 
-void Graph::getInitialVertexes(list<int> *r, int criteria, int s){
+void Graph::getInitialVertexes(list<int> *r, Dictionary *allowedNodes, int criteria, int s){
 	node *ord = new node[nNodes];
 	ifstream input;
 	switch (criteria){
@@ -259,17 +259,19 @@ void Graph::getInitialVertexes(list<int> *r, int criteria, int s){
 		switch (criteria){
 			case SIW: ord[i].id = i + 1; ord[i].chave = sumInversedWeight[i]; break;
 			case DEGREE: ord[i].id = i + 1; ord[i].chave = sizes[i]; break;
-			case RDEGREE: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
-			case CLOSENESS: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
-			case RCLOSENESS: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
-			case ECCENTRICITY: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
-			case RADIAL: input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case RDEGREE:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case CLOSENESS:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case RCLOSENESS:	input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case ECCENTRICITY:	input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
+			case RADIAL:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
 			default: cout << "An error was found during initial vertexes generation" << endl;
 		}
 	}
 	heapSort(ord, nNodes);
-	for (int c = 0; c < s; c++){
-		r->push_front(ord[c].id);
+	for (int c = 0; r->size() != s; c++){
+		if (allowedNodes->getIndexByNode(ord[c].id)!=-1){
+			r->push_front(ord[c].id);
+		}
 	}
 	delete[] ord;
 }

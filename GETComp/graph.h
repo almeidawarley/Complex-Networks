@@ -42,7 +42,7 @@ class Graph{
 		bool isConnected(int n);
 		void breadthSearch(Tree *tree, int n, double cut);
 		void depthSearch(list<int> *depth, int node, int maxSize);
-		void getInitialVertexes(list<int> *r, int criteria, int s = -1);
+		void getInitialVertexes(list<int> *r, Dictionary *allowedNodes, int criteria, int s = -1);
 		void print();
 		void setNumberOfDisconnected();
 		int getNumberOfDisconnected();

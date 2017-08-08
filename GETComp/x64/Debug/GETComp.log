@@ -1,4 +1,4 @@
-﻿Build started 04/08/2017 09:35:55.
+﻿Build started 08/08/2017 11:45:04.
      1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -11,14 +11,16 @@
          GETComp.cpp
      1>GETComp.cpp(173): warning C4244: '+=' : conversion from 'IloNum' to 'int', possible loss of data
      1>GETComp.cpp(252): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
-     1>GETComp.cpp(381): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(383): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(464): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(465): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(466): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(400): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(435): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>GETComp.cpp(453): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(455): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(542): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(543): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(544): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
          graph.cpp
      1>graph.cpp(261): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>graph.cpp(334): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>graph.cpp(336): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
          maxheap.cpp
          queue.cpp
          tree.cpp
@@ -39,4 +41,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:10.67
+Time Elapsed 00:00:04.68

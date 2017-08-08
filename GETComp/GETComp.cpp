@@ -21,7 +21,7 @@ void createColumn(Graph *graph, bool *generatedColumns, int node, Dictionary *al
 	graph->breadthSearch(&tree, node, cut);
 	register int index = allowedNodes->getIndexByNode(node);
 	if (generatedColumns[index]){
-		cout << "Coluna: " << node << endl;
+		cout << "Coluna: " << node << " | Index: " << index << endl;
 		utilities.wait("Erro ao gerar colunas");
 	}
 	generatedColumns[index] = true;
@@ -70,7 +70,7 @@ void build(IloEnv env, Graph *graph, Dictionary *allowedNodes, IloNumVarArray W,
 void columns(Graph *graph, bool *generatedColumns, Dictionary *allowedNodes, IloRangeArray R, IloNumVarArray Z, IloNumVarArray W, double cut, int amount, int orderingBy, int model){
 	list<int> allowedZ;
 	IloEnv env = R.getEnv();
-	graph->getInitialVertexes(&allowedZ, orderingBy, amount);
+	graph->getInitialVertexes(&allowedZ, allowedNodes, orderingBy, amount);
 	cout << "> Columns:      ";
 	double control = 0;
 	int initialSize = (int) allowedZ.size();
@@ -352,7 +352,77 @@ void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, Il
 		R[i].setExpr(W[i]);
 }
 
+struct est{
+	float chave;
+	int id;
+} typedef node;
 
+void heapify(node *v, int ind, int tam){
+	int maior = ind;
+	int esq = 2 * ind + 1;
+	int dir = 2 * ind + 2;
+	if (esq < tam && v[ind].chave > v[esq].chave){
+		maior = esq;
+	}
+	if (dir < tam && v[maior].chave > v[dir].chave){
+		maior = dir;
+	}
+	if (maior != ind){
+		node aux = v[ind];
+		v[ind] = v[maior];
+		v[maior] = aux;
+		heapify(v, maior, tam);
+	}
+}
+
+void heapSorti(node* v, int tam){
+	for (int i = tam / 2; i >= 0; i--){
+		heapify(v, i, tam);
+	}
+	while (tam > 0){
+		node aux = v[0];
+		v[0] = v[tam - 1];
+		v[tam - 1] = aux;
+		heapify(v, 0, tam - 1);
+		tam--;
+	}
+}
+
+void greedy(Graph * graph, float percentage){
+	int counter = 0;
+	int current = 0;
+	int size = graph->getNumberOfNodes();
+	node * candidates;
+	candidates = new node[size];
+	bool *chosen = new bool[size];
+	for (int i = 0; i < size; i++){
+		candidates[i].id = i + 1;
+		candidates[i].chave = graph->getDegree(i + 1);
+		chosen[i] = false;
+	}
+	heapSorti(candidates, size);
+	while (counter < percentage*graph->getNumberOfNodes()){
+		current = 0;
+		Tree tree;
+		graph->breadthSearch(&tree, candidates[0].id, 0.001);
+		cout << candidates[0].id << " | ";
+		current++;
+		candidates[0].chave = -1;
+		for (int i = 0; i < tree.getSize(); i++){
+			if (!chosen[tree.nodes[i] - 1]){
+				chosen[tree.nodes[i] - 1] = true;
+				current++;
+			}
+		}
+		for (int i = 0; i < graph->getNumberOfNodes(); i++){
+			if (chosen[candidates[i].id - 1])
+				candidates[i].chave = -1;
+		}
+		heapSorti(candidates, size);
+		size -= current;
+		counter += current;
+	}
+}
 
 int main(int argc, char **argv){
 
@@ -361,6 +431,8 @@ int main(int argc, char **argv){
 	Graph graph;
 	graph.loadFromFile("lorenza.txt");
 	Dictionary allowedNodes(graph.getNumberOfNodes());
+
+	greedy(&graph, 0.3);
 
 	IloEnv env;
 	IloModel model(env);
@@ -382,7 +454,7 @@ int main(int argc, char **argv){
 	int maxInfs[] = { 5, 15, 25, 35, 45 };
 	float infCuts[] = { 0.001, 0.005, 0.01, 0.1 };
 	int maxInf = 10;
-
+	
 	//run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, 1000, 30);
 	//run(3, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 0.1, 0.001, 1000, 60*3);
 	//solucao.clear();
@@ -458,7 +530,13 @@ int main(int argc, char **argv){
 	int tlimit = 30;
 	int ncolumns = 100;
 	string file = "M.csv";
-	for (int c = 0; c < 7; c++){
+
+	//run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 45, 0.1, ncolumns, tlimit, file, 4);
+	//run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 45, 0.1, ncolumns, tlimit, file, 4);
+	//run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 45, 0.1, ncolumns, tlimit, file, 4);
+	//solucao.clear();
+
+	for (int c = 5; c > 4; c--){
 		for (int i = 0; i < 4; i++){
 			for (int j = 0; j < 5; j++){
 				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
@@ -468,11 +546,5 @@ int main(int argc, char **argv){
 			}
 		}
 	}
-	//Graph g;
-	//g.loadFromFile("lorenza.txt", "amountReached.txt");
-	//g.getPathSizeAtAllNodes(1291667);
-	graph.excent(1119724); //<-
-	//g.print();
-	//g.brandes();
 	utilities.wait("FIM");
 }
