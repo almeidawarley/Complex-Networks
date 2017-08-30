@@ -257,8 +257,8 @@ void Graph::getInitialVertexes(list<int> *r, Dictionary *allowedNodes, int crite
 		cout << "A file was not read" << endl;
 	for (int i = 0; i < nNodes; i++){
 		switch (criteria){
-			case SIW: ord[i].id = i + 1; ord[i].chave = sumInversedWeight[i]; break;
-			case DEGREE: ord[i].id = i + 1; ord[i].chave = sizes[i]; break;
+			case SIW:			ord[i].id = i + 1; ord[i].chave = sumInversedWeight[i]; break;
+			case DEGREE:		ord[i].id = i + 1; ord[i].chave = sizes[i]; break;
 			case RDEGREE:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
 			case CLOSENESS:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
 			case RCLOSENESS:	input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
@@ -269,7 +269,7 @@ void Graph::getInitialVertexes(list<int> *r, Dictionary *allowedNodes, int crite
 	}
 	heapSort(ord, nNodes);
 	for (int c = 0; r->size() != s; c++){
-		if (allowedNodes->getIndexByNode(ord[c].id)!=-1){
+		if (allowedNodes->getIndexByNode(ord[c].id) != -1 && ord[c].id != 14493 && ord[c].id != 59831){
 			r->push_front(ord[c].id);
 		}
 	}
