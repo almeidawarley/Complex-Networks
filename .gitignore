@@ -86,3 +86,7 @@ $RECYCLE.BIN/
 
 # Text files
 *.txt
+*.csv
+*.rar
+*.xlsx
+*.xls

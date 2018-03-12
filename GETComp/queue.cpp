@@ -1,3 +1,12 @@
+/**
+	Information Diffusion in Complex Networks
+	queue.cpp
+	Purpose: implements the class Queue
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
+
 #include "stdafx.h"
 
 Queue::Queue(int s){
@@ -18,13 +27,11 @@ Queue::~Queue(){
 
 bool Queue::in(int n){
 	last++;
-	//cout << "n: " << n << " size: " << size <<  endl;
     if(n>0&&n<=size)
         contain[n-1] = true;
     else
         return false;
     queue[last] = n;
-	//cout << queue[last] << " first: " << first << " novo last: " << last + 1 << endl;    
     return true;
 }
 

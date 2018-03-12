@@ -1,3 +1,12 @@
+/**
+	Information Diffusion in Complex Networks
+	arc.h
+	Purpose: defines the class Arc
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
+
 #include "stdafx.h"
 
 class Arc{

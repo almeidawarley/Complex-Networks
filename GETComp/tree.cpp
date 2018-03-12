@@ -1,3 +1,12 @@
+/**
+	Information Diffusion in Complex Networks
+	tree.cpp
+	Purpose: implements the class Tree
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
+
 #include "stdafx.h"
 
 Tree::Tree(){

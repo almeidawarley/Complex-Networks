@@ -20,9 +20,8 @@
 #include "dictionary.h"
 #include "tree.h"
 #include "queue.h"
-#include "data.h"
 #include "funct.h"
-#include "maxheap.h"
 #include "graph.h"
+#include "Tree.h"
 
 // TODO: reference additional headers your program requires here

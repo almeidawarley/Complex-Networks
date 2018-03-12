@@ -1,3 +1,11 @@
+/**
+	Information Diffusion in Complex Networks
+	dictionary.cpp
+	Purpose: implements the class Dictionary
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
 
 #include "stdafx.h"
 
@@ -13,7 +21,10 @@ Dictionary::Dictionary(int t){
 }
 
 Dictionary::~Dictionary(){
-
+	size = -1;
+	lastIndex = -1;
+	delete info;
+	info = NULL;
 }
 
 int Dictionary::add(int n){
@@ -43,12 +54,4 @@ void Dictionary::print(){
 			cout << ", ";
 	}
 	cout << "]" << endl;
-}
-
-void Dictionary::free(){
-	delete info;
-	info = NULL;
-	size = -1;
-	lastIndex = -1;
-	cout << "Excluindo..." << endl;
 }

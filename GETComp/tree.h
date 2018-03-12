@@ -1,6 +1,16 @@
+/**
+	Information Diffusion in Complex Networks
+	tree.h
+	Purpose: defines the class Tree
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
+
 #ifndef TREE_H
 #define TREE_H
 #include "stdafx.h"
+
 class Tree{
 	private:
 		int *index;

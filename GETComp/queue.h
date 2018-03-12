@@ -1,4 +1,13 @@
-#include <iostream>
+/**
+	Information Diffusion in Complex Networks
+	queue.h
+	Purpose: defines the class Queue
+
+	@author Warley Almeida Silva
+	@version 1.0
+*/
+
+#include "stdafx.h"
 
 class Queue{
     private:

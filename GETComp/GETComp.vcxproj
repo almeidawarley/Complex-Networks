@@ -167,11 +167,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arc.h" />
-    <ClInclude Include="data.h" />
     <ClInclude Include="dictionary.h" />
     <ClInclude Include="funct.h" />
     <ClInclude Include="graph.h" />
-    <ClInclude Include="maxheap.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -179,12 +177,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="arc.cpp" />
-    <ClCompile Include="data.cpp" />
     <ClCompile Include="dictionary.cpp" />
     <ClCompile Include="funct.cpp" />
     <ClCompile Include="GETComp.cpp" />
     <ClCompile Include="graph.cpp" />
-    <ClCompile Include="maxheap.cpp" />
     <ClCompile Include="queue.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
