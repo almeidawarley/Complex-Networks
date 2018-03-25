@@ -252,7 +252,7 @@ void Graph::depthSearch(list<int> *depth, int node, int maxSize){
 	*@return void: -
 *********************************************************/
 void Graph::getPathSizeAtAllNodes(int n){
-	ofstream output("pathAtAllNodes.txt", ios::app);
+	ofstream output("redoPathAtAllNodes.txt", ios::app);
 	int *distances = new int[nNodes];
 	int *queue = new int[nNodes];
 	int i, sum, bQueue, eQueue, node, indexDistance, listSize;
@@ -296,8 +296,7 @@ void Graph::getPathSizeAtAllNodes(int n){
 *********************************************************/
 
 void Graph::eccentricity(int n){
-	ofstream output("excent.txt", ios::app);
-	//output << nNodes << endl;
+	ofstream output("redoEccentricity.txt", ios::app);
 	int *distances = new int[nNodes];
 	int *queue = new int[nNodes];
 	int bQueue, eQueue, node, indexDistance, listSize;

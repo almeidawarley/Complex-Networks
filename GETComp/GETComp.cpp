@@ -18,8 +18,7 @@ using namespace std;
 Funct utilities;
 LARGE_INTEGER t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, freq;
 bool *ignored = NULL;
-bool COMPARISON = true;
-string compariso;
+bool comparison = true;
 stringstream ssColumns, ssSolution, ssIgnored;
 
 /*
@@ -74,8 +73,8 @@ void createColumn(Graph *graph, bool *generatedColumns, int node, Dictionary *al
 		cout << "Coluna: " << node << " | Index: " << index << endl;
 		utilities.wait("Erro ao gerar colunas");
 	}
-	if (isIgnored(node) == COMPARISON){
-		cout << "Node " << node << " ignored due to " << compariso << " similarity" << endl;
+	if (ignored != NULL && isIgnored(node) == comparison){
+		cout << "Node " << node << " ignored due to " << (comparison ? "high" : "low") << " similarity" << endl;
 		return;
 	}
 	generatedColumns[index] = true;
@@ -295,7 +294,7 @@ void model003(IloModel model, float parameter, IloObjective objective, IloRange 
 			IloRangeArray T:			constraint array that sets values to variables
 	*@return void: -
 *********************************************************/
-void model004(IloModel model, float parameter, IloObjective objective, IloRange infFunction, IloNumVarArray W, IloNumVarArray Z, IloNumArray solucao, IloRangeArray T){
+void model004(IloModel model, float parameter, IloObjective objective, IloRange infFunction, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRangeArray T){
 	try{
 		IloEnv env = model.getEnv();
 		objective.setExpr(IloSum(W));
@@ -303,8 +302,8 @@ void model004(IloModel model, float parameter, IloObjective objective, IloRange 
 		infFunction.setExpr(-IloSum(Z));
 		infFunction.setLb(-IloInfinity);
 		IloConversion(env, W, IloNumVar::Float);
-		for (int i = 0; i < solucao.getSize(); i++)
-			if (solucao[i] > 0.9)
+		for (int i = 0; i < solution.getSize(); i++)
+			if (solution[i] > 0.9)
 				T.add(Z[i] == 1);
 
 	}
@@ -317,20 +316,22 @@ void model004(IloModel model, float parameter, IloObjective objective, IloRange 
 /*
 	Sets a local branching constraint based on a previous solution
 	*@param IloRange localB:			stores the local branching constraint
-			IloNumArray solucao:		stores a previous solution
+			IloNumArray solution:		stores a previous solution
 			IloNUmVarArray Z:			is an array with variables Z following the model
 			Dictionary *allowedNodes:	dictionary with all allowed nodes
 			int radius:					can be used to choose even less members from previous solution
 	*@return void: -
 *********************************************************/
-void localBranching(IloRange localB, IloNumArray solucao, IloNumVarArray Z,  Dictionary *allowedNodes, int radius){
+void localBranching(IloRange localB, IloNumArray solution, IloNumVarArray Z,  Dictionary *allowedNodes, int radius){
 	cout << "Adding local branching constraint" << endl;
 	int counter = 0;
-	for (int u = 0; u < allowedNodes->getSize(); u++){
-		counter += solucao[u];
+	for (int u = 0; u < solution.getSize(); u++){
+		counter += int(solution[u]);
 	}
-	localB.setLinearCoefs(Z, solucao);
-	localB.setUB(counter-1);
+	cout << "Counter: " << counter << endl;
+	localB.setLinearCoefs(Z, solution);
+	localB.setUB(counter - 3);
+	cout << localB << endl;
 }
 
 /*
@@ -340,7 +341,7 @@ void localBranching(IloRange localB, IloNumArray solucao, IloNumVarArray Z,  Dic
 			IloNumVarArray W:			is an array with variables W following the model
 			IloNUmVarArray Z:			is an array with variables Z following the model
 			IloRangeArray R:			is an array of constraints following the model
-			IloNumArray solucao:		stores a previous solution
+			IloNumArray solution:		stores a previous solution
 			Graph *graph:				is a pointer to the graph
 			Dictionary *allowedNodes:	dictionary with all allowed nodes
 			float parameter:			stores the information to set the upper bound of the information constraint
@@ -353,7 +354,7 @@ void localBranching(IloRange localB, IloNumArray solucao, IloNumVarArray Z,  Dic
 			bool branching:				indicates whether a local branching constraint will be added
 	*@return void: -
 *********************************************************/
-void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solucao, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, int criteria, bool branching = false){
+void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, int criteria, bool branching = false){
 	
 	ofstream dataOutput(append.c_str(), ios::app);
 	QueryPerformanceCounter(&t0);
@@ -377,11 +378,11 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 		case 1: model001(model, parameter, objective, infFunction, W, Z); break;
 		case 2: model002(model, parameter, objective, infFunction, W, Z); break;
 		case 3: model003(model, parameter, objective, infFunction, allowedNodes, W, Z); break;
-		case 4: model004(model, parameter, objective, infFunction, W, Z, solucao, T); break;
+		case 4: model004(model, parameter, objective, infFunction, W, Z, solution, T); break;
 		default: cout << "Wrong model parameter" << endl; exit(1);
 	}
 	QueryPerformanceCounter(&t6);
-	IloNumVar folga(env);
+	//IloNumVar slack(env);
 	bool repeat;
 	int previousSolution = MAXINT;
 	int iteration = 0;
@@ -395,19 +396,21 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 			timelimit = 5; //if using local braching we're going to wait 5 minutes for better solutions
 		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber);
 
-		if (solucao.getSize()!=0){
+		if (solution.getSize() != 0){
 			if (branching){
-				localBranching(localB, solucao, Z, allowedNodes, 1);
-				localB.setLinearCoef(folga, -1);
-				objective.setLinearCoef(folga, 500);
+				localBranching(localB, solution, Z, allowedNodes, 1);
+				//localB.setLinearCoef(slack, -1);
+				//objective.setLinearCoef(slack, 500);
+				cout << localB << endl;
 				cout << "Local branching constraint added to the model" << endl;
+				utilities.wait("opa");
 			}
 			try{
-				cplex.addMIPStart(Z, solucao, IloCplex::MIPStartAuto, "previousSolution");
+				cplex.addMIPStart(Z, solution, IloCplex::MIPStartAuto, "previousSolution");
 			}
 			catch (IloException e){
 				cout << "Previous solution could not be used by solver" << endl;
-				cout << Z.getSize() << " - " << solucao.getSize() << endl;
+				cout << Z.getSize() << " - " << solution.getSize() << endl;
 				hasPreviousSolution = false;
 				cerr << e << endl;
 			}
@@ -420,9 +423,9 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 			try{
 				QueryPerformanceCounter(&t8);
 
-				//auxText << "model00" << modelNumber << ".lp";
-				//cplex.exportModel(auxText.str().c_str());
-				//auxText.str("");
+				auxText << "model00" << modelNumber << ".lp";
+				cplex.exportModel(auxText.str().c_str());
+				auxText.str("");
 
 				if (previousSolution >= cplex.getObjValue()){
 					repeat = true;
@@ -437,7 +440,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				cplex.getValues(W, valuesW);
 				int sTreeSize = 0, minTreeSize = HI, maxTreeSize = LI;
 				float sInversedWeight = 0, minInversedWeight = HI, maxInversedWeight = LI;
-				solucao.clear();
+				solution.clear();
 
 				IloNum solutionValue = cplex.getObjValue();
 
@@ -453,14 +456,14 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				case 3: env.out() << " | percentage: " << parameter * 100 << "%"; break;
 				}
 				env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << "\tinfCut  = " << infCut << endl;
-				if (branching)
-					cout << "Value of folga : " << cplex.getValue(folga) * 500 << endl;
+				//if (branching)
+				//	cout << "Value of slack : " << cplex.getValue(slack) * 500 << endl;
 				env.out() << " > People who received original information:" << endl;
 				for (int i = 0; i < allowedNodes->getSize(); i++){
 					int node = allowedNodes->getNodeByIndex(i);
 					if (generatedColumns[i] && cplex.getValue(Z[i]) > 0.9){
 						ids << node << " ";
-						solucao.add(1);
+						solution.add(1);
 						inSolution++;
 						Tree tree;
 						graph->breadthSearch(&tree, node, infCut);
@@ -477,7 +480,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 							maxInversedWeight = graph->getSIW(node);
 					}
 					else{
-						solucao.add(0);
+						solution.add(0);
 					}
 					if (cplex.getValue(W[i]) >= infCut){
 						reached++;
@@ -501,9 +504,9 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 
 				dataOutput << modelNumber << ";" << parameter << ";" << initialC << ";" << infCut << ";" << time(&t10, &t0, &freq) << ";";
 				dataOutput << time(&t2, &t1, &freq) << ";" << time(&t4, &t3, &freq) << ";" << time(&t6, &t5, &freq) << ";" << time(&t8, &t7, &freq) << ";" << time(&t10, &t9, &freq) << ";";
-				dataOutput << solutionValue << ";" << (float)(sInversedWeight / inSolution) << ";" << minInversedWeight << ";" << maxInversedWeight << ";";
-				dataOutput << (float)(sTreeSize / inSolution) << ";" << minTreeSize << ";" << maxTreeSize << ";" << ((float)counter / allowedNodes->getSize()) * 100 << ";" << counter << ";";
-				dataOutput << branching << ";" << iteration << ";" << hasPreviousSolution << ";" << ids.str() << ";" << ssColumns.str() << ";" << criteria << ";" << ssSolution.str() << ";" << ssIgnored.str() << ";" << compariso << endl;
+				dataOutput << solutionValue << ";" << (inSolution != 0 ? (float)(sInversedWeight / inSolution) : -1) << ";" << minInversedWeight << ";" << maxInversedWeight << ";";
+				dataOutput << (inSolution != 0 ? (float)(sTreeSize / inSolution) : -1) << ";" << minTreeSize << ";" << maxTreeSize << ";" << ((float)counter / allowedNodes->getSize()) * 100 << ";" << counter << ";";
+				dataOutput << branching << ";" << iteration << ";" << hasPreviousSolution << ";" << ids.str() << ";" << ssColumns.str() << ";" << criteria << ";" << ssSolution.str() << ";" << ssIgnored.str() << ";" << (comparison ? "high" : "low") << endl;
 				ssColumns.str("");
 				ssSolution.str("");
 			}
@@ -530,7 +533,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 			IloNumVarArray W:			is an array with variables W following the model
 			IloNUmVarArray Z:			is an array with variables Z following the model
 			IloRangeArray R:			is an array of constraints following the model
-			IloNumArray solucao:		stores a previous solution
+			IloNumArray solution:		stores a previous solution
 			Graph *graph:				is a pointer to the graph
 			Dictionary *allowedNodes:	dictionary with all allowed nodes
 			bool *generatedColumns:		generatedColumns[u] indicates whether a column for node u was generated or not
@@ -543,11 +546,11 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 			bool branching:				indicates whether a local branching constraint will be added
 	*@return void: -
 *********************************************************/
-void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solucao, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float parameter, float infCut, int initialC, int timelimit, string path, int criteria, bool branching  = false){
+void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float parameter, float infCut, int initialC, int timelimit, string path, int criteria, bool branching  = false){
 	cout << "Calling for " << infCut << " - " << parameter << " - " << initialC << endl;
 	utilities.setBool(generatedColumns, allowedNodes->getSize(), false);
 	columns(graph, generatedColumns, allowedNodes, R, Z, W, infCut, initialC, criteria, modelNumber);
-	solve(modelNumber, model, W, Z, R, solucao, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria, branching);
+	solve(modelNumber, model, W, Z, R, solution, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria, branching);
 	for (int i = 0; i < R.getSize(); i++)
 		R[i].setExpr(W[i]);
 }
@@ -648,7 +651,7 @@ int main(int argc, char **argv){
 	build(env, &graph, &allowedNodes, W, Z, R);
 	QueryPerformanceCounter(&t2);
 
-	IloNumArray solucao(env);
+	IloNumArray solution(env);
 
 	model.add(R);
 
@@ -662,50 +665,49 @@ int main(int argc, char **argv){
 
 	int tlimit = 30;
 	int ncolumns = 100;
-	string file = "anotherCSV.csv";
-	
-	for (int c = 0; c < 7; c++){
+	string file = "finalCSV.csv";
+
+	run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
+	run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
+		
+	/*for (int c = 0; c < 7; c++){
 		for (int d = c+1; d < 7 && c!= d; d++){
 			if (c != 5 && d != 5){
 				createIgnored(&graph, &allowedNodes, c, d, ncolumns);
 
-				COMPARISON = false;
-				compariso = "low";
+				comparison = false;
 
-				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
+				run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
 
-				COMPARISON = true;
-				compariso = "high";
+				comparison = true;
 
-				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
+				run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
 
-				COMPARISON = false;
-				compariso = "low";
+				comparison = false;
 
-				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);				
+				run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);				
 
-				COMPARISON = true;
-				compariso = "high";
+				comparison = true;
 
-				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
+				run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
 
-				solucao.clear();
+				solution.clear();
 				freeIgnored();
 			}
 		}
-	}
+	}*/
 
 	/*for (int c = 0; c < 5; c++){
 		for (int i = 0; i < 4; i++){
 			for (int j = 0; j < 5; j++){
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
-				run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
-				run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
-				solucao.clear();
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], ncolumns, tlimit, file, c);
+				solution.clear();
 			}
 		}
 	}*/
@@ -714,61 +716,61 @@ int main(int argc, char **argv){
 	//Tests for model 1 and 3
 	/*for (int i = 0; i < PARAMETERSIZE - 1; i++){
 		for (int j = 0; j < PARAMETERSIZE; j++){
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[i], 1000, 180, "criterio3.csv");
-			run(3, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, percentages[j], infCuts[i], 1000, 180, "criterio3.csv");
-			run(4, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[i], 1000, 180, "criterio3.csv");
-			solucao.clear();
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[i], 1000, 180, "criterio3.csv");
+			run(3, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, percentages[j], infCuts[i], 1000, 180, "criterio3.csv");
+			run(4, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[i], 1000, 180, "criterio3.csv");
+			solution.clear();
 		}
 	}*/
 
 	
 	/*for (int i = 0; i < PARAMETERSIZE - 1; i++){
 		for (int j = 0; j < PARAMETERSIZE; j++){
-			run(3, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, percentages[j], infCuts[i], 1000, 30, "criterio3.csv", SIW);
-			run(4, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[j], 1000, 30, "criterio3.csv", SIW);
-			solucao.clear();
+			run(3, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, percentages[j], infCuts[i], 1000, 30, "criterio3.csv", SIW);
+			run(4, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCuts[j], 1000, 30, "criterio3.csv", SIW);
+			solution.clear();
 		}
 	}*/
 	
 	//Tests for model 1 and 2
 	/*for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 5; j++){
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
-			solucao.clear();
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio2.csv", RDEGREE);
+			solution.clear();
 		}
 	}
 	for (int i = 1; i < 4; i++){
 		for (int j = 0; j < 5; j++){
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
-			solucao.clear();
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio3.csv", CLOSENESS);
+			solution.clear();
 		}
 	}
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 5; j++){
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
-			solucao.clear();
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio4.csv", RCLOSENESS);
+			solution.clear();
 		}
 	}
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 5; j++){
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
-			solucao.clear();
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio5.csv", ECCENTRICITY);
+			solution.clear();
 		}
 	}
 	for (int i = 0; i < 4; i++){
 		for (int j = 0; j < 5; j++){
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
-			run(1, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
-			run(2, model, W, Z, R, solucao, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
-			solucao.clear();
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInfs[j], infCuts[i], 1000, 30, "criterio6.csv", RADIAL);
+			solution.clear();
 		}
 	}
 	*/

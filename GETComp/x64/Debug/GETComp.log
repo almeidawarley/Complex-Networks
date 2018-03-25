@@ -1,4 +1,4 @@
-﻿Build started 09/03/2018 19:53:06.
+﻿Build started 24/03/2018 21:23:37.
      1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -8,19 +8,12 @@
          dictionary.cpp
          funct.cpp
          GETComp.cpp
-     1>GETComp.cpp(330): warning C4244: '+=' : conversion from 'IloNum' to 'int', possible loss of data
-     1>GETComp.cpp(429): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
-     1>GETComp.cpp(570): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(654): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(656): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(432): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
+     1>GETComp.cpp(573): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(659): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(661): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(670): warning C4305: 'argument' : truncation from 'double' to 'float'
      1>GETComp.cpp(671): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(672): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(677): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(678): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(683): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(684): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(689): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(690): warning C4305: 'argument' : truncation from 'double' to 'float'
          graph.cpp
      1>graph.cpp(199): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
          queue.cpp
@@ -35,9 +28,46 @@
          x64\Debug\queue.obj
          x64\Debug\stdafx.obj
          x64\Debug\tree.obj
+     1>concert.lib(ilosstructi.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosstructi.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilohash.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilohash.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloalg.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloalg.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloenv.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloenv.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilostimei.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilostimei.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloallocator.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloallocator.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosatomi.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosatomi.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloserror.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloserror.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosdisplayi.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosdisplayi.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilorandom.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilorandom.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilothread.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilothread.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilossol.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilossol.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilotypes.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilotypes.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloexpression.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloexpression.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosbasic.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosbasic.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloset.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloset.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloconstraint.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloconstraint.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloanyexpr.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloanyexpr.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloextractable.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloextractable.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilomap.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilomap.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosmodel.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosmodel.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosolution.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosolution.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloiterator.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloiterator.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilossequencei.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilossequencei.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilocollection.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilocollection.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilocollectionstruct.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilocollectionstruct.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilosimplecollection.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilosimplecollection.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilocollectionoperator.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilocollectionoperator.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilocollectioniterator.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilocollectioniterator.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloskiplist.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloskiplist.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilonumfunci.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilonumfunci.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(iloparami.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(iloparami.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(ilointervalsi.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(ilointervalsi.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(evalkernel.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(evalkernel.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(evaluator.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(evaluator.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(evalexpand.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(evalexpand.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
+     1>concert.lib(strtod.obj) : warning LNK4099: PDB 'concert.pdb' was not found with 'concert.lib(strtod.obj)' or at 'C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\concert.pdb'; linking object as if no debug info
          GETComp.vcxproj -> C:\Users\almei\Documents\GitHub\Complex-Networks\x64\Debug\GETComp.exe
      1>Done Building Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.31
+Time Elapsed 00:00:08.27
