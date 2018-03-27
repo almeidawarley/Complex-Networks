@@ -331,7 +331,6 @@ void localBranching(IloRange localB, IloNumArray solution, IloNumVarArray Z,  Di
 	cout << "Counter: " << counter << endl;
 	localB.setLinearCoefs(Z, solution);
 	localB.setUB(counter - 3);
-	cout << localB << endl;
 }
 
 /*
@@ -393,7 +392,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 
 		QueryPerformanceCounter(&t7);
 		if (branching)
-			timelimit = 5; //if using local braching we're going to wait 5 minutes for better solutions
+			timelimit = 10; //if using local braching we're going to wait 5 minutes for better solutions
 		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber);
 
 		if (solution.getSize() != 0){
@@ -401,9 +400,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				localBranching(localB, solution, Z, allowedNodes, 1);
 				//localB.setLinearCoef(slack, -1);
 				//objective.setLinearCoef(slack, 500);
-				cout << localB << endl;
 				cout << "Local branching constraint added to the model" << endl;
-				utilities.wait("opa");
 			}
 			try{
 				cplex.addMIPStart(Z, solution, IloCplex::MIPStartAuto, "previousSolution");
