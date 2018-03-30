@@ -207,7 +207,7 @@ void Graph::getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria
 	}
 	utilities.heapSort(ord, nNodes);
 	for (int c = 0; r->size() != amount; c++){
-		if (allowedNodes->getIndexByNode(ord[c].id) != -1 && ord[c].id != 14493 && ord[c].id != 59831){
+		if (allowedNodes->getIndexByNode(ord[c].id) != -1){
 			r->push_front(ord[c].id);
 		}
 	}

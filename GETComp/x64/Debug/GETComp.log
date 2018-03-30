@@ -1,4 +1,4 @@
-﻿Build started 27/03/2018 00:11:02.
+﻿Build started 29/03/2018 23:02:34.
      1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -8,12 +8,13 @@
          dictionary.cpp
          funct.cpp
          GETComp.cpp
-     1>GETComp.cpp(429): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
-     1>GETComp.cpp(570): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(656): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(658): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(667): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(668): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>GETComp.cpp(433): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
+     1>GETComp.cpp(442): warning C4244: '=' : conversion from 'IloNum' to 'int', possible loss of data
+     1>GETComp.cpp(590): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(676): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(678): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(687): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>GETComp.cpp(688): warning C4305: 'argument' : truncation from 'double' to 'float'
          graph.cpp
      1>graph.cpp(199): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
          queue.cpp
@@ -33,4 +34,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:13.01
+Time Elapsed 00:00:12.97
