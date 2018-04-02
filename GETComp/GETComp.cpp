@@ -12,10 +12,12 @@
 #include <windows.h>
 #define HI +99999 // positive infinite
 #define LI -99999 // negative infinite
-#define LBMAXTIME 15
-#define LBMINTIME 5
+#define LBMAXTIME 60
+#define LBMINTIME 10
+#define LBTIMEUNIT 10
 #define LBMAXRADIUS 5
 #define LBMINRADIUS 1
+#define LBRADIUSUNIT 1
 
 using namespace std;
 
@@ -338,6 +340,19 @@ void localBranching(IloRange localB, IloNumArray solution, IloNumVarArray Z,  Di
 
 }
 
+string criteriaToString(int criteria){
+	switch (criteria){
+	case 0: return "SIW"; break;
+	case 1: return "Degree"; break;
+	case 2: return "Relative degree"; break;
+	case 3: return "Closeness"; break;
+	case 4: return "Relative closeness"; break;
+	case 5: return "Eccentricity"; break;
+	case 6: return "Radial"; break;
+	}
+	return "Not found";
+}
+
 /*
 	Solves the previously constructed model
 	*@param int modelNumber:			indicates the model that is being solved
@@ -390,8 +405,12 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 	int previousSolution = MAXINT;
 	int iteration = 0;
 
-	if (branching)
+	/*if (branching){
 		timelimit = (LBMAXTIME + LBMINTIME) / 2;
+		radius = (LBMAXRADIUS + LBMINRADIUS) / 2;
+	}*/
+
+	
 
 	do{
 		bool hasPreviousSolution = false;
@@ -402,9 +421,13 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber);
 
 		if (solution.getSize() != 0){
-			if (branching){
+			/*if (branching){
 				localBranching(localB, solution, Z, allowedNodes, radius);
 				cout << "Local branching constraint added to the model" << endl;
+			}*/
+			if (branching){
+				cplex.setParam(IloCplex::LBHeur, 1);
+				cout << "LB heuristic: " << cplex.getParam(IloCplex::LBHeur) << endl;
 			}
 			try{
 				cplex.addMIPStart(Z, solution, IloCplex::MIPStartAuto, "previousSolution");
@@ -428,27 +451,31 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				//cplex.exportModel(auxText.str().c_str());
 				//auxText.str("");
 
-				if (previousSolution >= cplex.getObjValue()){
-					repeat = true;
-					previousSolution = cplex.getObjValue();
-					if (timelimit > LBMINTIME)
-						timelimit -= 2;
-					if (radius < LBMAXRADIUS)
-						radius += 1;
-				}
-				else{
-					if (timelimit < LBMAXTIME || radius > LBMINRADIUS){
+				/*if (branching){
+					if (previousSolution > cplex.getObjValue()){
 						repeat = true;
-						previousSolution = cplex.getObjValue();
-						if (timelimit < LBMAXTIME)
-							timelimit += 2;
-						else
-							radius -= 1;
+						if (timelimit > LBMINTIME)
+							timelimit -= LBTIMEUNIT;
+						if (radius < LBMAXRADIUS)
+							radius += LBRADIUSUNIT;
 					}
 					else{
-						cout << "Timelimit: " << timelimit << " | Radius: " << radius << endl;
+						if (timelimit < LBMAXTIME || radius > LBMINRADIUS){
+							repeat = true;
+							if (timelimit < LBMAXTIME)
+								timelimit += LBTIMEUNIT;
+							if (radius > LBMINRADIUS)
+								radius -= LBRADIUSUNIT;
+						}
+						else{
+							cout << "# Local Branching could not improve solution and will be therefore terminated" << endl;
+						}
 					}
 				}
+				previousSolution = cplex.getObjValue();*/
+				
+
+				cout << "Repeat: " << repeat << " | Branching: " << branching << " | Timelimit: " << timelimit << " | Radius: " << radius << " | iteration: " << iteration << endl;
 
 				QueryPerformanceCounter(&t9);
 				stringstream ids;
@@ -473,7 +500,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				case 2: env.out() << " | maxInf: " << parameter; break;
 				case 3: env.out() << " | percentage: " << parameter * 100 << "%"; break;
 				}
-				env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << "\tinfCut  = " << infCut << endl;
+				env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << "\tinfCut  = " << infCut << "\tCriteria: " << criteriaToString(criteria) << endl;
 				env.out() << " > People who received original information:" << endl;
 				for (int i = 0; i < allowedNodes->getSize(); i++){
 					int node = allowedNodes->getNodeByIndex(i);
@@ -522,7 +549,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				dataOutput << time(&t2, &t1, &freq) << ";" << time(&t4, &t3, &freq) << ";" << time(&t6, &t5, &freq) << ";" << time(&t8, &t7, &freq) << ";" << time(&t10, &t9, &freq) << ";";
 				dataOutput << solutionValue << ";" << (inSolution != 0 ? (float)(sInversedWeight / inSolution) : -1) << ";" << minInversedWeight << ";" << maxInversedWeight << ";";
 				dataOutput << (inSolution != 0 ? (float)(sTreeSize / inSolution) : -1) << ";" << minTreeSize << ";" << maxTreeSize << ";" << ((float)counter / allowedNodes->getSize()) * 100 << ";" << counter << ";";
-				dataOutput << branching << ";" << iteration << ";" << hasPreviousSolution << ";" << ids.str() << ";" << ssColumns.str() << ";" << criteria << ";" << ssSolution.str() << ";" << ssIgnored.str() << ";" << (comparison ? "high" : "low") << ";" << radius << endl;
+				dataOutput << branching << ";" << iteration << ";" << hasPreviousSolution << ";" << ids.str() << ";" << ssColumns.str() << ";" << criteria << ";" << ssSolution.str() << ";" << ssIgnored.str() << ";" << (comparison ? "high" : "low") << ";" << radius << ";" << endl;
 				ssColumns.str("");
 				ssSolution.str("");
 			}
@@ -534,7 +561,6 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				cerr << e.what() << endl;
 			}
 		}
-		cout << "Repeat: " << repeat << " | Branching: " << branching << " | Timelimit: " << timelimit << " | Radius: " << radius << " | iteration: " << iteration << endl;
 	} while (repeat && branching && iteration < 10);
 	cplex.end();
 	infFunction.end();
@@ -680,7 +706,7 @@ int main(int argc, char **argv){
 
 	// (2) Running the tests
 
-	int tlimit = 90;
+	int tlimit = 30;
 	int ncolumns = 100;
 	string file = "finalCSV.csv";
 
@@ -694,17 +720,17 @@ int main(int argc, char **argv){
 			comparison = false;
 
 			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
-			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c, true, 3);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c, true);
 
 			comparison = true;
 
 			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c);
-			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c, true, 3);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, c, true);
 
 			comparison = false;
 
 			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d);
-			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d, true, 3);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, d, true);
 
 			comparison = true;
 
