@@ -336,7 +336,7 @@ void localBranching(IloRange localB, IloNumArray solution, IloNumVarArray Z,  Di
 	}
 	cout << "Counter: " << counter << endl;
 	localB.setLinearCoefs(Z, solution);
-	localB.setLB(counter - 3);
+	localB.setLB(counter - radius);
 
 }
 
@@ -710,10 +710,10 @@ int main(int argc, char **argv){
 	int ncolumns = 100;
 	string file = "finalCSV.csv";
 
-	//run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
-	//run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
+    run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
+	run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
 		
-	for (int c = 0; c < 7; c++){
+	/*for (int c = 0; c < 7; c++){
 		for (int d = c+1; d < 7 && c!= d; d++){
 			createIgnored(&graph, &allowedNodes, c, d, ncolumns);
 
@@ -740,7 +740,7 @@ int main(int argc, char **argv){
 			solution.clear();
 			freeIgnored();
 		}
-	}
+	}*/
 
 	/*for (int c = 0; c < 5; c++){
 		for (int i = 0; i < 4; i++){
