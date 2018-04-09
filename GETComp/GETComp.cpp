@@ -175,7 +175,7 @@ void columns(Graph *graph, bool *generatedColumns, Dictionary *allowedNodes, Ilo
 			int model:					indicates which model is used in this run
 	*@return void: -
 *********************************************************/
-void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int model){
+void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int model, bool branching){
 	cplex.setParam(IloCplex::TiLim, timelimit * 60);
 	cplex.setParam(IloCplex::MemoryEmphasis, true);
 	cplex.setParam(IloCplex::WorkMem, 100);
@@ -183,13 +183,12 @@ void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int m
 	cplex.setParam(IloCplex::ColReadLim, initialC);
 	cplex.setParam(IloCplex::RowReadLim, initialR);
 	cplex.setParam(IloCplex::NumericalEmphasis, 1);
-	if (model == 3){
-		cplex.setParam(IloCplex::PolishAfterDetTime, 2 * 30 * 60);
-		cplex.setParam(IloCplex::RINSHeur, 30);
-		//cplex.setParam(IloCplex::RINSHeur, 50);
-		cout <<"PADT: " << cplex.getParam(IloCplex::PolishAfterDetTime);
-		cout << " _ RINS: "<< cplex.getParam(IloCplex::RINSHeur) << endl;
-		cout << "Using polishing" << endl;
+	cplex.setParam(IloCplex::PolishAfterDetTime, 2 * 30 * 60);
+	cplex.setParam(IloCplex::RINSHeur, 30);
+
+	if (branching){
+		cplex.setParam(IloCplex::LBHeur, 1);
+		cout << "LB heuristic: " << cplex.getParam(IloCplex::LBHeur) << endl;
 	}
 }
 
@@ -418,17 +417,13 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 		iteration++;
 
 		QueryPerformanceCounter(&t7);
-		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber);
+		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber, branching);
 
 		if (solution.getSize() != 0){
 			/*if (branching){
 				localBranching(localB, solution, Z, allowedNodes, radius);
 				cout << "Local branching constraint added to the model" << endl;
 			}*/
-			if (branching){
-				cplex.setParam(IloCplex::LBHeur, 1);
-				cout << "LB heuristic: " << cplex.getParam(IloCplex::LBHeur) << endl;
-			}
 			try{
 				cplex.addMIPStart(Z, solution, IloCplex::MIPStartAuto, "previousSolution");
 			}
@@ -707,10 +702,10 @@ int main(int argc, char **argv){
 	// (2) Running the tests
 
 	int tlimit = 30;
-	int ncolumns = 100;
+	int ncolumns = 1000;
 	string file = "finalCSV.csv";
 
-    run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
+	run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
 	run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
 		
 	/*for (int c = 0; c < 7; c++){

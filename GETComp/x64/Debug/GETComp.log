@@ -1,4 +1,4 @@
-﻿Build started 02/04/2018 23:52:30.
+﻿Build started 04/04/2018 15:00:56.
      1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -8,11 +8,11 @@
          dictionary.cpp
          funct.cpp
          GETComp.cpp
-     1>GETComp.cpp(616): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(702): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(704): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(713): warning C4305: 'argument' : truncation from 'double' to 'float'
-     1>GETComp.cpp(714): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>GETComp.cpp(611): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(697): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(699): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>GETComp.cpp(708): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>GETComp.cpp(709): warning C4305: 'argument' : truncation from 'double' to 'float'
          graph.cpp
      1>graph.cpp(199): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
          queue.cpp
@@ -32,4 +32,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:11.12
+Time Elapsed 00:00:02.98
