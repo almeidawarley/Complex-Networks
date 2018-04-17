@@ -10,6 +10,8 @@
 #include "stdafx.h"
 #include <ilcplex/ilocplex.h>
 #include <windows.h>
+#include <vector>
+#include <time.h>
 #define HI +99999 // positive infinite
 #define LI -99999 // negative infinite
 #define LBMAXTIME 60
@@ -20,6 +22,8 @@
 #define LBRADIUSUNIT 1
 
 using namespace std;
+
+list<int> testeG;
 
 Funct utilities;
 LARGE_INTEGER t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, freq;
@@ -594,7 +598,7 @@ void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, Il
 }
 
 /*
-	Call the build and solve functions previously implemented
+	Greedy approach to solve model 3
 	*@param Graph *graph:				is a pointer to the graph
 			float percentage:			indicates the percentage of people in the network that must be reached
 	*@return void: -
@@ -668,7 +672,127 @@ void createIgnored(Graph *graph, Dictionary *allowedNodes, int c1, int c2, int n
 	}
 }
 
-int main(int argc, char **argv){
+int independentCascade(Graph *g, list<int> chosen, int newnode, float infCut){
+	bool change = true;
+	int iteration = 0;
+	bool *flags = new bool[g->getNumberOfNodes()];
+	utilities.setBool(flags, g->getNumberOfNodes(), false);
+	int front;
+	vector<int> status;
+	vector<int> partial;
+	list<int> adj;
+	cout << "Independent Cascade Model with set size " << chosen.size() + 1 << endl;
+	while (!chosen.empty()){
+		status.push_back(chosen.front());
+		partial.push_back(chosen.front());
+		flags[chosen.front() - 1] = true;
+		chosen.pop_front();
+	}
+	while (change){
+		list<int> current;
+		change = false;
+		cout << "Iteration: " << iteration++ << " - Percentage: " << (float) status.size()/g->getNumberOfNodes() << endl;
+		for (int i : partial){
+			g->getAdjacency(&adj, i);
+			while (!adj.empty()){
+				front = adj.front();
+				adj.pop_front();
+				if (!flags[front-1] && g->getWeight(front, i) > infCut){
+					current.push_back(front);
+					flags[front - 1] = true;
+					change = true;
+				}
+			}
+			status.push_back(i);
+		}
+		partial.clear();
+		for (int i : current){
+			partial.push_back(i);
+		}
+	}
+	int sum = 0;
+	for (int i = 0; i < g->getNumberOfNodes(); i++)
+		sum += flags[i];
+	cout << "Sum: " << sum << endl;
+	return status.size();
+}
+
+int linearThreshold(Graph *g, list<int> chosen, int newnode, float infCut){
+	bool change = true;
+	int sum = 0;
+	list<int> adj;
+	float *sumWeights = new float[g->getNumberOfNodes()];
+	float *previousSumWeights = new float[g->getNumberOfNodes()];
+	vector<int> current;
+	for (int c = 0; c < g->getNumberOfNodes(); c++){
+		sumWeights[c] = 0;
+		previousSumWeights[c] = 0;
+	}
+	cout << "Linear Threshold Model" << endl;
+	while (!chosen.empty()){
+		current.push_back(chosen.front());
+		previousSumWeights[chosen.front() - 1] = 1;
+		chosen.pop_front();
+	}
+	while (change){
+
+		change = false;
+		for (int i = 0; i < g->getNumberOfNodes(); i++)
+			previousSumWeights[i] = sumWeights[i];
+
+		for(int node : current){
+			int front;
+			g->getAdjacency(&adj, node);
+			while (!adj.empty()){
+				front = adj.front();
+				adj.pop_front();
+				sumWeights[front - 1] += g->getWeight(front, node)*(previousSumWeights[node - 1] > infCut? 1 : 0);
+			}
+		}
+
+		sum += current.size();
+		current.clear();
+
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			if (previousSumWeights[i] == 0 && sumWeights[i] != 0){
+				current.push_back(i + 1);
+				change = true;
+			}
+		}
+
+	}
+	return sum;
+}
+
+void greedyApproach(Graph *g, float infCut, int k, char type){
+	int count = 0;
+	int sum = 0;
+	int highestSum = 0;
+	int highestSumNode = -1;
+	list<int> set;
+	while (count < k){
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			switch (type) {
+				case 't': sum = linearThreshold(g, set, i + 1, infCut); break;
+				case 'c': sum = independentCascade(g, set, i + 1, infCut); break;
+				default: exit(0);
+			}
+			
+			if (sum > highestSum){
+				highestSum = sum;
+				highestSumNode = i + 1;
+			}
+		}
+		set.push_back(highestSumNode);
+	}
+	cout << "Set: ";
+	while (!set.empty()){
+		cout << set.front() << " | ";
+		set.pop_front();
+	}
+}
+
+int main(int argc, char **argv){	
 
 	QueryPerformanceCounter(&t0);
 
@@ -706,7 +830,15 @@ int main(int argc, char **argv){
 	string file = "finalCSV.csv";
 
 	run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
-	run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
+
+	list<int> adj;
+	for (int i = 0; i < solution.getSize(); i++)
+		if (solution[i])
+			adj.push_back(allowedNodes.getNodeByIndex(i));
+	int ops = linearThreshold(&graph, adj, 2, 0.001);
+	cout << ops << endl;
+
+	//run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
 		
 	/*for (int c = 0; c < 7; c++){
 		for (int d = c+1; d < 7 && c!= d; d++){
