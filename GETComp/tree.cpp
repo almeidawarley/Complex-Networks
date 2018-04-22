@@ -18,6 +18,17 @@ Tree::Tree(){
 }
 
 void Tree::build(int s, int n){
+	if (lastAdded != 0){
+		delete[] info;
+		delete[] index;
+		delete[] nodes;
+		delete[] level;
+		nodes = NULL;
+		info = NULL;
+		index = NULL;
+		level = NULL;
+		lastAdded = 0;
+	}
 	nodes = new int[s];
 	info = new float[s];
 	index = new int[s];

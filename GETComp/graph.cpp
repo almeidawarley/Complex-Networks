@@ -166,6 +166,31 @@ void Graph::breadthSearch(Tree *tree, int n, double cut){
 	}
 }
 
+void Graph::breadthSearchW(Tree *tree, int n, double cut){
+	cout << "Comecou";
+	tree->build(nNodes, n);
+	cout << "construiu";
+	Queue queue(nNodes);
+	Funct utilities;
+	queue.in(n);
+	utilities.setInt(bFlags, nNodes, -1);
+	while (!queue.empty()){
+		int t = queue.next();
+		queue.out();
+		if (bFlags[t - 1] != n){
+			float weight = tree->getInfoParent(t);
+			for (int c = 0; c < sizes[t - 1]; c++){
+				int currentV = arcs[t - 1][c].getEndpoint();
+				if (bFlags[currentV - 1] != n && weight*getWeight(currentV, t) > cut && isConnected(currentV) && !queue.contains(currentV)){
+					queue.in(currentV);
+					tree->add(currentV, t, 1);
+				}
+			}
+			bFlags[t - 1] = n;
+		}
+	}
+}
+
 /*
 	Function to generate list of better nodes according to some criteria
 	*@param list<int> *r: pointer to the list that will receive the initial nodes

@@ -81,6 +81,7 @@ class Graph{
 		bool isConnected(int n);
 		void breadthSearch(Tree *tree, int n, double cut);
 		void depthSearch(list<int> *depth, int node, int maxSize);		
+		void breadthSearchW(Tree *tree, int n, double cut);
 		void print();
 
 		void getPathSizeAtAllNodes(int n);

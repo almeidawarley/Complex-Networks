@@ -96,7 +96,7 @@ void createColumn(Graph *graph, bool *generatedColumns, int node, Dictionary *al
 		dIndex = allowedNodes->getIndexByNode(current);
 		if (option)
 			utilities.load(f, tree.getSize(), &control);
-		if ((model == 2 || model == 3) && tree.info[f] > 0){
+		if ((model == 2 || model == 3 || model == 5) && tree.info[f] > 0){
 			R[dIndex].setLinearCoef(Z[index], -1);
 		}
 		if ((model == 1 || model == 4) && tree.getInfoByVertex(current) != 0){
@@ -323,6 +323,42 @@ void model004(IloModel model, float parameter, IloObjective objective, IloRange 
 }
 
 /*
+	Generates the constraints and objective function for model 004.
+
+	In this model, a previous solution is passed by as parameter and the value of the objective function is calculated.
+	Portuguese: Recebe solução inicial e verifica qual é o valor da funcao objetivo.
+
+	*@param IloModel model:				indicates the current CPLEX model
+			float parameter:			indicates the upper bound in the objective function
+			IloObjective objective:		indicates the current objective function
+			IloRange infFunction:		indicates the information constraint
+			IloNumVarArray W:			is an array with variables W following the model
+			IloNUmVarArray Z:			is an array with variables Z following the model
+			IloNumArray solution:		previous solution received as parameter
+			IloRangeArray T:			constraint array that sets values to variables
+	*@return void: -
+*********************************************************/
+void model005(IloModel model, float parameter, IloObjective objective, IloRange infFunction, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRangeArray T){
+	try{
+		IloEnv env = model.getEnv();
+		objective.setExpr(IloSum(W));
+		objective.setSense(IloObjective::Maximize);
+		infFunction.setUb(parameter);
+		infFunction.setExpr(IloSum(Z));
+		infFunction.setLb(-IloInfinity);
+		IloConversion(env, W, IloNumVar::Bool);
+		for (int i = 0; i < solution.getSize(); i++)
+			if (solution[i] == 1)
+				T.add(Z[i] == 1);
+
+	}
+	catch (IloException e){
+		cerr << e << endl;
+
+	}
+}
+
+/*
 	Sets a local branching constraint based on a previous solution
 	*@param IloRange localB:			stores the local branching constraint
 			IloNumArray solution:		stores a previous solution
@@ -401,6 +437,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 		case 2: model002(model, parameter, objective, infFunction, W, Z); break;
 		case 3: model003(model, parameter, objective, infFunction, allowedNodes, W, Z); break;
 		case 4: model004(model, parameter, objective, infFunction, W, Z, solution, T); break;
+		case 5: model005(model, parameter, objective, infFunction, W, Z, solution, T); break;
 		default: cout << "Wrong model parameter" << endl; exit(1);
 	}
 	QueryPerformanceCounter(&t6);
@@ -537,6 +574,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				case 2: printf(" | Reached without merge %d\t\t\t\tPercentage: %.2f%%\n", reached, ((float)reached / allowedNodes->getSize()) * 100); break;
 				case 3: printf(" | Number of selected people: %.0f\t\t\t\tPercentage: %.2f%%\n", solutionValue, ((float)solutionValue / allowedNodes->getSize()) * 100); break;
 				case 4: printf(" | Reached without merge %d\t\t\t\tPercentage: %.2f%%\n", reached, ((float)reached / allowedNodes->getSize()) * 100); break;
+				case 5: printf(" | Reached without merge %d\t\t\t\tPercentage: %.2f%%\n", reached, ((float)reached / allowedNodes->getSize()) * 100); break;
 				default: cout << "Wrong model parameter" << endl;
 				}
 				printf(" | Reached with merge: %d\t\t\t\tPercentage: %.2f%%\n", counter, ((float)counter / allowedNodes->getSize()) * 100);
@@ -673,48 +711,30 @@ void createIgnored(Graph *graph, Dictionary *allowedNodes, int c1, int c2, int n
 }
 
 int independentCascade(Graph *g, list<int> chosen, int newnode, float infCut){
-	bool change = true;
-	int iteration = 0;
-	bool *flags = new bool[g->getNumberOfNodes()];
-	utilities.setBool(flags, g->getNumberOfNodes(), false);
 	int front;
-	vector<int> status;
+	int sum = 0;
 	vector<int> partial;
-	list<int> adj;
-	cout << "Independent Cascade Model with set size " << chosen.size() + 1 << endl;
+	Tree tree;
+	bool *setunion = new bool[g->getNumberOfNodes()];
+	utilities.setBool(setunion, g->getNumberOfNodes(), false);
+	chosen.push_back(newnode);
+	cout << "#";
 	while (!chosen.empty()){
-		status.push_back(chosen.front());
 		partial.push_back(chosen.front());
-		flags[chosen.front() - 1] = true;
 		chosen.pop_front();
 	}
-	while (change){
-		list<int> current;
-		change = false;
-		cout << "Iteration: " << iteration++ << " - Percentage: " << (float) status.size()/g->getNumberOfNodes() << endl;
-		for (int i : partial){
-			g->getAdjacency(&adj, i);
-			while (!adj.empty()){
-				front = adj.front();
-				adj.pop_front();
-				if (!flags[front-1] && g->getWeight(front, i) > infCut){
-					current.push_back(front);
-					flags[front - 1] = true;
-					change = true;
-				}
-			}
-			status.push_back(i);
-		}
-		partial.clear();
-		for (int i : current){
-			partial.push_back(i);
+	for (int node : partial){
+		g->breadthSearchW(&tree, node, infCut);
+		for (int i = 0; i < tree.getSize(); i++){
+			setunion[tree.nodes[i] - 1] = setunion[tree.nodes[i] - 1] && tree.info[i];
 		}
 	}
-	int sum = 0;
-	for (int i = 0; i < g->getNumberOfNodes(); i++)
-		sum += flags[i];
-	cout << "Sum: " << sum << endl;
-	return status.size();
+
+	for (int i = 0; i < g->getNumberOfNodes(); i++){
+		sum += setunion[i];
+	}
+	
+	return sum;
 }
 
 int linearThreshold(Graph *g, list<int> chosen, int newnode, float infCut){
@@ -764,13 +784,14 @@ int linearThreshold(Graph *g, list<int> chosen, int newnode, float infCut){
 	return sum;
 }
 
-void greedyApproach(Graph *g, float infCut, int k, char type){
+void greedyApproach(Graph *g, float infCut, int k, char type = 'c'){
 	int count = 0;
 	int sum = 0;
 	int highestSum = 0;
 	int highestSumNode = -1;
 	list<int> set;
 	while (count < k){
+		cout << "Looking for node with highest sum... " << endl;
 		for (int i = 0; i < g->getNumberOfNodes(); i++){
 			switch (type) {
 				case 't': sum = linearThreshold(g, set, i + 1, infCut); break;
@@ -783,12 +804,24 @@ void greedyApproach(Graph *g, float infCut, int k, char type){
 				highestSumNode = i + 1;
 			}
 		}
+		cout << highestSumNode << " found" << endl;
 		set.push_back(highestSumNode);
 	}
 	cout << "Set: ";
 	while (!set.empty()){
 		cout << set.front() << " | ";
 		set.pop_front();
+	}
+}
+
+void createSolution(Graph *graph, Dictionary *allowedNodes, IloNumArray solution, int criteria, int amount){
+	list<int> answer;
+	graph->getInitialNodes(&answer, allowedNodes, criteria, amount);
+	for (int i = 0; i < solution.getSize(); i++)
+		solution[i] = 0;
+	while (!answer.empty()){
+		solution[allowedNodes->getIndexByNode(answer.front())] = 1;
+		answer.pop_front();
 	}
 }
 
@@ -801,6 +834,10 @@ int main(int argc, char **argv){
 	Graph graph;
 	graph.loadFromFile("lorenza.txt");
 	Dictionary allowedNodes(graph.getNumberOfNodes());
+	
+
+	//greedyApproach(&graph, 0.001, 5);
+	//utilities.wait("fim do algoritmo guloso");
 
 	IloEnv env;
 	IloModel model(env);
@@ -827,19 +864,39 @@ int main(int argc, char **argv){
 
 	int tlimit = 30;
 	int ncolumns = 1000;
-	string file = "finalCSV.csv";
+	string file = "newtests.csv";
 
-	run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
+	for (int i = 0; i < 4; i++){
+		for (int j = 1; j < 30; j++){
+
+			// our approach
+			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
+			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
+
+			// selecting by centrality measures
+			for (int k = 1; k < 7; k++){
+				createSolution(&graph, &allowedNodes, solution, k, j);
+				run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, 1, file, 0);
+			}
+		}
+	}
+
+	
+
+	utilities.wait("opa");
+
+	// Independent Cascade Model
+	/*run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1);
 
 	list<int> adj;
 	for (int i = 0; i < solution.getSize(); i++)
 		if (solution[i])
 			adj.push_back(allowedNodes.getNodeByIndex(i));
-	int ops = linearThreshold(&graph, adj, 2, 0.001);
-	cout << ops << endl;
+	int ops = independentCascade(&graph, adj, 2, 0.01);
+	cout << (float)ops/graph.getNumberOfNodes() << endl;*/
 
-	//run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 1, true);
-		
+
+	//Tests for ignoring common and uncommon columns
 	/*for (int c = 0; c < 7; c++){
 		for (int d = c+1; d < 7 && c!= d; d++){
 			createIgnored(&graph, &allowedNodes, c, d, ncolumns);
@@ -869,6 +926,8 @@ int main(int argc, char **argv){
 		}
 	}*/
 
+
+	//Basic test for models 1 and 2
 	/*for (int c = 0; c < 5; c++){
 		for (int i = 0; i < 4; i++){
 			for (int j = 0; j < 5; j++){
