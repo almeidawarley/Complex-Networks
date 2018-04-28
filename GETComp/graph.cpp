@@ -167,9 +167,7 @@ void Graph::breadthSearch(Tree *tree, int n, double cut){
 }
 
 void Graph::breadthSearchW(Tree *tree, int n, double cut){
-	cout << "Comecou";
 	tree->build(nNodes, n);
-	cout << "construiu";
 	Queue queue(nNodes);
 	Funct utilities;
 	queue.in(n);

@@ -183,17 +183,13 @@ void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int m
 	cplex.setParam(IloCplex::TiLim, timelimit * 60);
 	cplex.setParam(IloCplex::MemoryEmphasis, true);
 	cplex.setParam(IloCplex::WorkMem, 100);
-	cplex.setParam(IloCplex::NodeFileInd, 1);
+	cplex.setParam(IloCplex::NodeFileInd, 3);
 	cplex.setParam(IloCplex::ColReadLim, initialC);
 	cplex.setParam(IloCplex::RowReadLim, initialR);
 	cplex.setParam(IloCplex::NumericalEmphasis, 1);
 	cplex.setParam(IloCplex::PolishAfterDetTime, 2 * 30 * 60);
 	cplex.setParam(IloCplex::RINSHeur, 30);
-
-	if (branching){
-		cplex.setParam(IloCplex::LBHeur, 1);
-		cout << "LB heuristic: " << cplex.getParam(IloCplex::LBHeur) << endl;
-	}
+	cplex.setParam(IloCplex::LBHeur, 1);
 }
 
 /*
@@ -339,6 +335,7 @@ void model004(IloModel model, float parameter, IloObjective objective, IloRange 
 	*@return void: -
 *********************************************************/
 void model005(IloModel model, float parameter, IloObjective objective, IloRange infFunction, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRangeArray T){
+	cout << "setting up" << endl;
 	try{
 		IloEnv env = model.getEnv();
 		objective.setExpr(IloSum(W));
@@ -356,6 +353,7 @@ void model005(IloModel model, float parameter, IloObjective objective, IloRange 
 		cerr << e << endl;
 
 	}
+	cout << "finishing" << endl;
 }
 
 /*
@@ -412,15 +410,15 @@ string criteriaToString(int criteria){
 			bool branching:				indicates whether a local branching constraint will be added
 	*@return void: -
 *********************************************************/
-void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, int criteria, bool branching = false, int radius = 0){
+int solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, float parameter, float infCut, int initialC, int timelimit, string append, bool *generatedColumns, int criteria, bool branching = false, int radius = 0){
 	
+	int counter; 
 	ofstream dataOutput(append.c_str(), ios::app);
 	QueryPerformanceCounter(&t0);
 	QueryPerformanceFrequency(&freq);
 
 	stringstream auxText;
 	IloEnv env = model.getEnv();
-	IloCplex cplex(model);
 	IloRange infFunction(env, 0, IloInfinity, "inf");
 	IloRange localB(env, -IloInfinity, IloInfinity, "localB");
 	IloObjective objective(env);
@@ -428,10 +426,10 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 
 	model.add(infFunction);
 	model.add(localB);
-	model.add(objective);	
-	
+	model.add(objective);
+
 	QueryPerformanceCounter(&t5);
-	
+
 	switch (modelNumber){
 		case 1: model001(model, parameter, objective, infFunction, W, Z); break;
 		case 2: model002(model, parameter, objective, infFunction, W, Z); break;
@@ -441,6 +439,9 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 		default: cout << "Wrong model parameter" << endl; exit(1);
 	}
 	QueryPerformanceCounter(&t6);
+
+	IloCplex cplex(model);
+		
 	bool repeat;
 	int previousSolution = MAXINT;
 	int iteration = 0;
@@ -448,23 +449,23 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 	/*if (branching){
 		timelimit = (LBMAXTIME + LBMINTIME) / 2;
 		radius = (LBMAXRADIUS + LBMINRADIUS) / 2;
-	}*/
-
+		}*/
 	
-
 	do{
 		bool hasPreviousSolution = false;
 		repeat = false;
 		iteration++;
 
 		QueryPerformanceCounter(&t7);
+		cout << "Setting parameters" << endl;
 		parameters(cplex, initialC, allowedNodes->getSize(), timelimit, modelNumber, branching);
+		cout << "Finished parameters" << endl;
 
 		if (solution.getSize() != 0){
 			/*if (branching){
 				localBranching(localB, solution, Z, allowedNodes, radius);
 				cout << "Local branching constraint added to the model" << endl;
-			}*/
+				}*/
 			try{
 				cplex.addMIPStart(Z, solution, IloCplex::MIPStartAuto, "previousSolution");
 			}
@@ -489,27 +490,27 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 
 				/*if (branching){
 					if (previousSolution > cplex.getObjValue()){
-						repeat = true;
-						if (timelimit > LBMINTIME)
-							timelimit -= LBTIMEUNIT;
-						if (radius < LBMAXRADIUS)
-							radius += LBRADIUSUNIT;
+					repeat = true;
+					if (timelimit > LBMINTIME)
+					timelimit -= LBTIMEUNIT;
+					if (radius < LBMAXRADIUS)
+					radius += LBRADIUSUNIT;
 					}
 					else{
-						if (timelimit < LBMAXTIME || radius > LBMINRADIUS){
-							repeat = true;
-							if (timelimit < LBMAXTIME)
-								timelimit += LBTIMEUNIT;
-							if (radius > LBMINRADIUS)
-								radius -= LBRADIUSUNIT;
-						}
-						else{
-							cout << "# Local Branching could not improve solution and will be therefore terminated" << endl;
-						}
+					if (timelimit < LBMAXTIME || radius > LBMINRADIUS){
+					repeat = true;
+					if (timelimit < LBMAXTIME)
+					timelimit += LBTIMEUNIT;
+					if (radius > LBMINRADIUS)
+					radius -= LBRADIUSUNIT;
 					}
-				}
-				previousSolution = cplex.getObjValue();*/
-				
+					else{
+					cout << "# Local Branching could not improve solution and will be therefore terminated" << endl;
+					}
+					}
+					}
+					previousSolution = cplex.getObjValue();*/
+
 
 				cout << "Repeat: " << repeat << " | Branching: " << branching << " | Timelimit: " << timelimit << " | Radius: " << radius << " | iteration: " << iteration << endl;
 
@@ -528,7 +529,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				int solutionIndex = 0;
 				int reached = 0;
 				int inSolution = 0;
-				int counter = 0;
+				counter = 0;
 				env.out() << endl << "**************************************************************************" << endl;
 				env.out() << " | MODEL 00" << modelNumber << endl;
 				switch (modelNumber){
@@ -579,7 +580,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 				}
 				printf(" | Reached with merge: %d\t\t\t\tPercentage: %.2f%%\n", counter, ((float)counter / allowedNodes->getSize()) * 100);
 				env.out() << "**************************************************************************" << endl;
-				
+
 				QueryPerformanceCounter(&t10);
 
 				dataOutput << modelNumber << ";" << parameter << ";" << initialC << ";" << infCut << ";" << time(&t10, &t0, &freq) << ";";
@@ -604,6 +605,7 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 	objective.end();
 	localB.end();
 	T.end();
+	return counter;
 }
 
 /*
@@ -626,13 +628,17 @@ void solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, 
 			bool branching:				indicates whether a local branching constraint will be added
 	*@return void: -
 *********************************************************/
-void run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float parameter, float infCut, int initialC, int timelimit, string path, int criteria, bool branching  = false, int radius = 0){
+int run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, IloNumArray solution, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float parameter, float infCut, int initialC, int timelimit, string path, int criteria, bool branching  = false, int radius = 0){
+	int answer = 0;
 	cout << "Calling for " << infCut << " - " << parameter << " - " << initialC << endl;
 	utilities.setBool(generatedColumns, allowedNodes->getSize(), false);
 	columns(graph, generatedColumns, allowedNodes, R, Z, W, infCut, initialC, criteria, modelNumber);
-	solve(modelNumber, model, W, Z, R, solution, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria, branching, radius);
+	cout << "e";
+	answer = solve(modelNumber, model, W, Z, R, solution, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria, branching, radius);
 	for (int i = 0; i < R.getSize(); i++)
 		R[i].setExpr(W[i]);
+
+	return answer;
 }
 
 /*
@@ -820,6 +826,7 @@ void createSolution(Graph *graph, Dictionary *allowedNodes, IloNumArray solution
 	for (int i = 0; i < solution.getSize(); i++)
 		solution[i] = 0;
 	while (!answer.empty()){
+		cout << answer.front() << ", ";
 		solution[allowedNodes->getIndexByNode(answer.front())] = 1;
 		answer.pop_front();
 	}
@@ -863,20 +870,29 @@ int main(int argc, char **argv){
 	// (2) Running the tests
 
 	int tlimit = 30;
-	int ncolumns = 1000;
-	string file = "newtests.csv";
+	int ncolumns = 5000;
+	string file = "newTests.csv";
+	int value = 0;
+
+	ofstream output("prettyOutput.txt", ios::app);
+	//output << "maxinf, infCut, approach, amountReached, percentageReached" << endl;
+	//createSolution(&graph, &allowedNodes, solution, 1, 15);
+	//run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.001, ncolumns, tlimit, file, 0);
+	//TODO: corrigir erro que dá no IloCplex
 
 	for (int i = 0; i < 4; i++){
-		for (int j = 1; j < 30; j++){
+		for (int j = 15; j < 30; j++){
 
 			// our approach
 			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
-			run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
+			value = run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
+			output << j << ", " << infCuts[i] << ", MIP, " << value << ", " << (float)value / graph.getNumberOfNodes() << endl;
 
 			// selecting by centrality measures
 			for (int k = 1; k < 7; k++){
 				createSolution(&graph, &allowedNodes, solution, k, j);
-				run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, 1, file, 0);
+				value = run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, 1, file, 0);
+				output << j << ", " << infCuts[i] << ", " << criteriaToString(k) << ", " << value << ", " << (float) value / graph.getNumberOfNodes() << endl;
 			}
 		}
 	}
@@ -938,8 +954,6 @@ int main(int argc, char **argv){
 			}
 		}
 	}*/
-	utilities.wait("FIM");
-
 	//Tests for model 1 and 3
 	/*for (int i = 0; i < PARAMETERSIZE - 1; i++){
 		for (int j = 0; j < PARAMETERSIZE; j++){
