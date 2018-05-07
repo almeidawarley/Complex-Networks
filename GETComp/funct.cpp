@@ -22,6 +22,13 @@ void Funct::wait(string text = ""){
 	getchar();
 }
 
+void Funct::error(string text = ""){
+	cout << text << endl;
+	cout << "Type anything to continue..." << endl;
+	getchar();
+	exit(1);
+}
+
 void Funct::setInt(int* vector, int size, int value){
 	for (int u = 0; u < size; u++)
 		vector[u] = value;

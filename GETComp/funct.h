@@ -26,5 +26,6 @@ class Funct{
 		void setBool(bool* vector, int size, bool value);
 		void load(int current, int total, double *control);
 		void heapSort(heapNode* v, int tam);	
+		void error(string text);
 };
 

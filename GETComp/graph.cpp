@@ -32,7 +32,7 @@ Graph::~Graph(){
 	*@param  string path: constains the name of the file
 	*@return void: -
 *********************************************************/
-void Graph::loadFromFile(string path){
+void Graph::load(string path){
 
 	/*
 		Declaration
@@ -125,7 +125,7 @@ float Graph::getWeight(int o, int d){
 			list<int> *l: list containing the adjacency of n
 	*@return void: -
 *********************************************************/
-void Graph::getAdjacency(list<int> *l, int n){
+void Graph::getAdjacency(vector<int> *l, int n){
 	if (n <= nNodes && n > 0){
 		for (int i = 0; i < sizes[n - 1]; i++){
 			if (isConnected(arcs[n - 1][i].getEndpoint()))
@@ -197,7 +197,7 @@ void Graph::breadthSearchW(Tree *tree, int n, double cut){
 			int s: defines the amount of nodes that can be selected
 	*@return void: -
 *********************************************************/
-void Graph::getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria, int amount){
+void Graph::getInitialNodes(vector<int> *r, Dictionary *allowedNodes, int criteria, int amount){
 	heapNode *ord = new heapNode[nNodes];
 	Funct utilities;
 	ifstream input;
@@ -214,12 +214,10 @@ void Graph::getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria
 	int temp;
 	if (input.is_open()) // reads first line
 		input >> temp;
-	else
-		cout << "A file was not read" << endl;
 	for (int i = 0; i < nNodes; i++){
 		switch (criteria){
 		case SIW:			ord[i].id = i + 1; ord[i].chave = siw[i]; break;
-		case DEGREE:		ord[i].id = i + 1; ord[i].chave = sizes[i]; break;
+		case DEGREE:		ord[i].id = i + 1; ord[i].chave = (float) sizes[i]; break;
 		case RDEGREE:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
 		case CLOSENESS:		input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
 		case RCLOSENESS:	input >> temp; ord[temp - 1].id = temp; input >> ord[temp - 1].chave; break;
@@ -229,9 +227,12 @@ void Graph::getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria
 		}
 	}
 	utilities.heapSort(ord, nNodes);
-	for (int c = 0; r->size() != amount; c++){
+	if (amount > nNodes){
+		amount = nNodes - 1;
+	}
+	for (int c = 0; r->size() != amount && c < amount; c++){
 		if (allowedNodes->getIndexByNode(ord[c].id) != -1){
-			r->push_front(ord[c].id);
+			r->push_back(ord[c].id);
 		}
 	}
 	delete[] ord;
@@ -247,7 +248,7 @@ void Graph::getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria
 
 void Graph::depthSearch(list<int> *depth, int node, int maxSize){
 	list<int> stack;
-	list<int> adj;
+	vector<int> adj;
 	stack.push_front(node);
 	Funct utilities;
 	//cout << "Depth from " << n << ": ";
@@ -256,10 +257,9 @@ void Graph::depthSearch(list<int> *depth, int node, int maxSize){
 		stack.pop_front();
 		if (dFlags[t - 1] != node){
 			getAdjacency(&adj, t);
-			while (!adj.empty()){
-				if (adj.front() != node)
-					stack.push_back(adj.front());
-				adj.pop_front();
+			for (int a : adj){
+				if (a != node)
+					stack.push_back(a);
 			}
 			depth->push_back(t);
 			dFlags[t - 1] = node;
@@ -389,7 +389,7 @@ float Graph::getSIW(int n){
 	return siw[n - 1];
 }
 
-int Graph::getMerge(int n){
+int Graph::getReachedNodes(int n){
 	return merge[n - 1] + 1;
 }
 
@@ -400,7 +400,7 @@ int Graph::getDegree(int n){
 void Graph::print(){
 	cout << "Graph: " << endl;
 	for (int c = 0; c < nNodes; c++){
-		cout << "{" << c + 1 << "} -> ";
+		cout << "{id: " << c + 1 << ", m: " << merge[c] <<  "} -> ";
 		for (int d = 0; d < sizes[c]; d++){
 			cout << "[" << arcs[c][d].getEndpoint() << "], ";
 		}

@@ -10,7 +10,7 @@
 #include "stdafx.h"
 
 /**
-	Brief description of the metrics:
+	Brief description of the measures:
 
 	# SIW (sum of inversed weights)		highlights nodes that are important for their neighbours
 	# DEGREE							highlights nodes that have many conections
@@ -64,18 +64,18 @@ class Graph{
 
         Graph();
         ~Graph();
-		void loadFromFile(string path);
+		void load(string path);
 
         int getNumberOfNodes();
 		int getNumberOfArcs();
 		int getNumberOfDisconnected();
-		int getMerge(int n);
+		int getReachedNodes(int n);
 		int getDegree(int n);
 		void setNumberOfDisconnected();
 		float getSIW(int n);
 
-		void getInitialNodes(list<int> *r, Dictionary *allowedNodes, int criteria, int amount = -1);
-		void getAdjacency(list<int> *l, int n);
+		void getInitialNodes(vector<int> *r, Dictionary *allowedNodes, int criteria, int amount = -1);
+		void getAdjacency(vector<int> *l, int n);
 		float getWeight(int o, int d);
 		
 		bool isConnected(int n);

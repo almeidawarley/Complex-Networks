@@ -13,6 +13,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <list>
 #include <string>
 #include <time.h>

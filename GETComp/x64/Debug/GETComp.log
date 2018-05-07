@@ -1,4 +1,4 @@
-﻿Build started 27/04/2018 19:24:42.
+﻿Build started 06/05/2018 21:41:43.
      1>Project "C:\Users\almei\Documents\GitHub\Complex-Networks\GETComp\GETComp.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\cplex\include" /I"C:\Program Files\IBM\ILOG\CPLEX_Studio1263\concert\include" /nologo /W3 /WX- /sdl /Od /D NDEBUG /D _CONSOLE /D IL_STD /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GETComp.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
@@ -8,16 +8,10 @@
          dictionary.cpp
          funct.cpp
          GETComp.cpp
-     1>GETComp.cpp(663): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(724): warning C4101: 'front' : unreferenced local variable
-     1>GETComp.cpp(783): warning C4267: '+=' : conversion from 'size_t' to 'int', possible loss of data
-     1>GETComp.cpp(869): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(871): warning C4305: 'initializing' : truncation from 'double' to 'float'
-     1>GETComp.cpp(891): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(892): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
-     1>GETComp.cpp(898): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(784): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(785): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>GETComp.cpp(791): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
          graph.cpp
-     1>graph.cpp(222): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
          queue.cpp
          tree.cpp
          Generating Code...
@@ -35,4 +29,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.98
+Time Elapsed 00:00:02.82
