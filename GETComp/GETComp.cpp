@@ -171,9 +171,6 @@ void build(Graph *graph, Dictionary *allowedNodes, IloNumVarArray W, IloNumVarAr
 			auxText.str("");
 			auxText << "r_" << u + 1;
 			R.add(IloRange(env, -IloInfinity, W[index], 0, auxText.str().c_str()));
-			auxText.str(""); 
-			auxText << "t_" << u + 1;
-			T.add(IloRange(env, -IloInfinity, Z[index], 0, auxText.str().c_str()));
 			auxText.str("");
 			ut.load(u, graph->getNumberOfNodes(), &control);
 		}
@@ -200,6 +197,7 @@ void columns(Graph *graph, bool *generatedColumns, Dictionary *allowedNodes, Ilo
 	graph->getInitialNodes(&allowedZ, allowedNodes, orderingBy, amount);	
 	int coefType = defineCoefType(model);
 	if (!checkCoefType(coefType, cut, amount)){
+		ut.setBool(generatedColumns, allowedNodes->getSize(), false);
 		columnsIDs.clear();
 		for (int i = 0; i < R.getSize(); i++)
 			R[i].setExpr(W[i]);
@@ -241,14 +239,20 @@ void parameters(IloCplex cplex, int initialC, int initialR, int timelimit, int m
 	cplex.setParam(IloCplex::LBHeur, 1);
 }
 
-void makeSolutionConstraint(IloRangeArray T, IloNumVarArray Z, IloNumArray solution){
+void makeSolutionConstraint(IloRange previous, IloNumVarArray Z, IloNumArray solution){
+	cout << " > Adding T constraints based on solution" << endl;
+	int counter = 0;
 	if (solution.getSize() != 0){
 		for (int i = 0; i < solution.getSize(); i++){
-			if (solution[i] == 0.9){
-				T[i].setExpr(Z[i] == 1);
+			if (solution[i] == 1){
+				previous.setLinearCoef(Z[i], 1);
+				counter++;
 			}
 		}
 	}
+	previous.setUB(counter);
+	previous.setLB(counter);
+	cout << " > Solution passed by parameter size: " << solution.getSize() << endl;
 }
 
 /*
@@ -267,13 +271,12 @@ void makeSolutionConstraint(IloRangeArray T, IloNumVarArray Z, IloNumArray solut
 			IloNUmVarArray Z:			is an array with variables Z following the model
 	*@return void: -
 	*********************************************************/
-void model001(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloRangeArray T){
+void model001(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRange previous){
 	IloConversion(env, W, IloNumVar::Float);
 	information.setUb(parameter);
 	information.setExpr(IloSum(Z));
 	objective.setExpr(IloSum(W));
 	objective.setSense(IloObjective::Maximize);
-	model.remove(T);
 }
 
 /*
@@ -292,13 +295,12 @@ void model001(IloModel model, float parameter, IloObjective objective, IloRange 
 			IloNUmVarArray Z:			is an array with variables Z following the model
 	*@return void: -
 *********************************************************/
-void model002(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloRangeArray T) {
+void model002(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRange previous) {
 	IloConversion(env, W, IloNumVar::Bool);
 	information.setUb(parameter);
 	information.setExpr(IloSum(Z));
 	objective.setExpr(IloSum(W));
 	objective.setSense(IloObjective::Maximize);
-	model.remove(T);
 }
 
 /*
@@ -318,13 +320,12 @@ void model002(IloModel model, float parameter, IloObjective objective, IloRange 
 			IloNUmVarArray Z:			is an array with variables Z following the model
 	*@return void: -
 *********************************************************/
-void model003(IloModel model, float parameter, IloObjective objective, IloRange information, Dictionary *allowedNodes, IloNumVarArray W, IloNumVarArray Z, IloRangeArray T){
+void model003(IloModel model, float parameter, IloObjective objective, IloRange information, Dictionary *allowedNodes, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRange previous){
 	IloConversion(env, W, IloNumVar::Bool);
 	objective.setExpr(IloSum(Z));
 	objective.setSense(IloObjective::Minimize);
 	information.setExpr(IloSum(W));
 	information.setLb(allowedNodes->getSize()*parameter);
-	model.remove(T);
 }
 
 /*
@@ -343,14 +344,13 @@ void model003(IloModel model, float parameter, IloObjective objective, IloRange 
 			IloRangeArray T:			constraint array that sets values to variables
 	*@return void: -
 *********************************************************/
-void model004(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRangeArray T){
+void model004(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRange previous){
 	IloConversion(env, W, IloNumVar::Float);
 	objective.setExpr(IloSum(W));
 	objective.setSense(IloObjective::Maximize);
 	information.setExpr(-IloSum(Z));
 	information.setLb(-IloInfinity);
-	makeSolutionConstraint(T, Z, solution);
-	model.add(T);
+	makeSolutionConstraint(previous, Z, solution);
 }
 
 /*
@@ -369,14 +369,14 @@ void model004(IloModel model, float parameter, IloObjective objective, IloRange 
 			IloRangeArray T:			constraint array that sets values to variables
 	*@return void: -
 *********************************************************/
-void model005(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRangeArray T){
+void model005(IloModel model, float parameter, IloObjective objective, IloRange information, IloNumVarArray W, IloNumVarArray Z, IloNumArray solution, IloRange previous){
+	cout << "Setting model 005" << endl;
 	IloConversion(env, W, IloNumVar::Bool);
 	objective.setExpr(IloSum(W));
 	objective.setSense(IloObjective::Maximize);
 	information.setUb(parameter);
 	information.setExpr(IloSum(Z));
-	makeSolutionConstraint(T, Z, solution);
-	model.add(T);
+	makeSolutionConstraint(previous, Z, solution);
 }
 
 string criteriaToString(int criteria){
@@ -415,25 +415,27 @@ int solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, I
 	
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&t0);
-	int nReached;
+	int nReached = 0;
 	ofstream output(append.c_str(), ios::app);
 
 	stringstream auxText;
 	IloRange information(env, 0, IloInfinity, "inf");
+	IloRange previous(env, 0, 0, "prev");
 	IloObjective objective(env);
 	IloRangeArray T(env);
 
-	model.add(information);
-	model.add(objective);
-
 	switch (modelNumber){
-		case 1: model001(model, parameter, objective, information, W, Z, T); break;
-		case 2: model002(model, parameter, objective, information, W, Z, T); break;
-		case 3: model003(model, parameter, objective, information, allowedNodes, W, Z, T); break;
-		case 4: model004(model, parameter, objective, information, W, Z, solution, T); break;
-		case 5: model005(model, parameter, objective, information, W, Z, solution, T); break;
+		case 1: model001(model, parameter, objective, information, W, Z, solution, previous); break;
+		case 2: model002(model, parameter, objective, information, W, Z, solution, previous); break;
+		case 3: model003(model, parameter, objective, information, allowedNodes, W, Z, solution, previous); break;
+		case 4: model004(model, parameter, objective, information, W, Z, solution, previous); break;
+		case 5: model005(model, parameter, objective, information, W, Z, solution, previous); break;
 		default: cout << "Wrong model parameter" << endl;
 	}
+
+	model.add(information);
+	model.add(objective);
+	model.add(previous);
 
 	previousModel = modelNumber;
 
@@ -453,86 +455,94 @@ int solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, I
 		}
 	}
 	
+	try{
 
-	if (!cplex.solve()) {
-		env.error() << " > Failed to optimize LP. Please go over the log file to find out what happened." << endl;
-	}
-	else{
-		cplex.exportModel("lastModel.lp");			
+		if (!cplex.solve()) {
+			env.error() << " > Failed to optimize LP. Please go over the log file to find out what happened." << endl;
+		}
+		else{
+			cplex.exportModel("lastModel.lp");
 
-		vector<int> solutionIDs, reachedIDs;
-		int sTreeSize = 0, minTreeSize = HI, maxTreeSize = LI;
-		float sInversedWeight = 0, minInversedWeight = HI, maxInversedWeight = LI;
-		solution.clear();
+			vector<int> solutionIDs, reachedIDs;
+			int sTreeSize = 0, minTreeSize = HI, maxTreeSize = LI;
+			float sInversedWeight = 0, minInversedWeight = HI, maxInversedWeight = LI;
+			solution.clear();
 
-		IloNum solutionValue = cplex.getObjValue();
+			IloNum solutionValue = cplex.getObjValue();
 
-		nReached = 0;
-		env.out() << endl << "**************************************************************************" << endl;
-		env.out() << " | MODEL 00" << modelNumber << endl;
-		switch (modelNumber){
+			nReached = 0;
+			env.out() << endl << "**************************************************************************" << endl;
+			env.out() << " | MODEL 00" << modelNumber << endl;
+			switch (modelNumber){
 			case 1: env.out() << " | maxInf: " << parameter; break;
 			case 2: env.out() << " | maxInf: " << parameter; break;
 			case 3: env.out() << " | Percentage: " << parameter * 100 << "%"; break;
 			case 4: env.out() << " | maxInf: " << parameter; break;
 			case 5: env.out() << " | maxInf: " << parameter; break;
-		}
-		env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << endl;
-		env.out() << " | infCut = " << infCut << "\tOrdering by: " << criteriaToString(criteria) << endl;
-		env.out() << " > People who received original information:" << endl;
-		for (int i = 0; i < allowedNodes->getSize(); i++){
-			int node = allowedNodes->getNodeByIndex(i);
-			if (cplex.getValue(Z[i]) == 1){
-				solutionIDs.push_back(node);
-				solution.add(1);
-				Tree tree;
-				graph->breadthSearch(&tree, node, infCut);
-				env.out() << " | ID:  " << node << "\tSIW: " << graph->getSIW(node) << "\tTree size:  " << tree.getSize() << "\tIndex: " << i << endl;
-				sInversedWeight += graph->getSIW(node);
-				sTreeSize += tree.getSize();
-				if (tree.getSize() < minTreeSize)
-					minTreeSize = tree.getSize();
-				if (tree.getSize() > maxTreeSize)
-					maxTreeSize = tree.getSize();
-				if (graph->getSIW(node) < minInversedWeight)
-					minInversedWeight = graph->getSIW(node);
-				if (graph->getSIW(node) > maxInversedWeight)
-					maxInversedWeight = graph->getSIW(node);
 			}
-			else{
-				solution.add(0);
+			env.out() << "\tSolution status = " << cplex.getStatus() << "\tSolution value = " << solutionValue << endl;
+			env.out() << " | infCut = " << infCut << "\tOrdering by: " << criteriaToString(criteria) << endl;
+			env.out() << " > People who received original information:" << endl;
+			for (int i = 0; i < allowedNodes->getSize(); i++){
+				int node = allowedNodes->getNodeByIndex(i);
+				if (generatedColumns[i] && cplex.getValue(Z[i]) == 1){
+					solutionIDs.push_back(node);
+					solution.add(1);
+					Tree tree;
+					graph->breadthSearch(&tree, node, infCut);
+					env.out() << " | ID:  " << node << "\tSIW: " << graph->getSIW(node) << "\tTree size:  " << tree.getSize() << "\tIndex: " << i << endl;
+					sInversedWeight += graph->getSIW(node);
+					sTreeSize += tree.getSize();
+					if (tree.getSize() < minTreeSize)
+						minTreeSize = tree.getSize();
+					if (tree.getSize() > maxTreeSize)
+						maxTreeSize = tree.getSize();
+					if (graph->getSIW(node) < minInversedWeight)
+						minInversedWeight = graph->getSIW(node);
+					if (graph->getSIW(node) > maxInversedWeight)
+						maxInversedWeight = graph->getSIW(node);
+				}
+				else{
+					solution.add(0);
+				}
+				if (cplex.getValue(W[i]) >= infCut){
+					reachedIDs.push_back(node);
+					nReached += graph->getReachedNodes(allowedNodes->getNodeByIndex(i));
+				}
 			}
-			if (cplex.getValue(W[i]) >= infCut){
-				reachedIDs.push_back(node);
-				nReached += graph->getReachedNodes(allowedNodes->getNodeByIndex(i));
-			}
-		}
-		switch (modelNumber){
+			switch (modelNumber){
 			case 1: printf(" | Reached without merged nodes %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float)nReached / graph->getNumberOfNodes()) * 100); break;
 			case 2: printf(" | Reached without merged nodes %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float)nReached / graph->getNumberOfNodes()) * 100); break;
 			case 3: printf(" | Number of selected people: %.0f\t\t\t\tPercentage: %.2f%%\n", solutionValue, ((float)solutionValue / graph->getNumberOfNodes()) * 100); break;
 			case 4: printf(" | Reached without merged nodes %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float)nReached / graph->getNumberOfNodes()) * 100); break;
 			case 5: printf(" | Reached without merged nodes %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float)nReached / graph->getNumberOfNodes()) * 100); break;
 			default: cout << "Wrong model parameter" << endl;
+			}
+			printf(" | Reached counting merged nodes: %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float)nReached / graph->getNumberOfNodes()) * 100);
+			env.out() << "**************************************************************************" << endl;
+
+			QueryPerformanceCounter(&t1);
+
+			//output << "model, parameter, nColumns, infCut, time, solutionValue, meanInversedWeight, minInversedWeight, maxInversedWeight, meanTreeSize, minTreeSize, maxTreeSize, pReached, nReached, solutionIDs, columnIDs, orderingBy, reachedIDs, ignored, comparison " << endl;
+
+			output << modelNumber << "," << parameter << "," << initialC << "," << infCut << "," << time(&t1, &t0, &freq) << "," << solutionValue << ",";
+			output << (solutionIDs.size() != 0 ? (float)(sInversedWeight / solutionIDs.size()) : -1) << "," << minInversedWeight << "," << maxInversedWeight << ",";
+			output << (solutionIDs.size() != 0 ? (float)(sTreeSize / solutionIDs.size()) : -1) << "," << minTreeSize << "," << maxTreeSize << ",";
+			output << ((float)nReached / allowedNodes->getSize()) * 100 << "," << nReached << ",";
+			output << solutionIDs << "," << columnsIDs << "," << criteriaToString(criteria) << "," << reachedIDs << ",";
+			output << ssIgnored.str() << "," << (comparison ? "high" : "low") << endl;
+
 		}
-		printf(" | Reached counting merged nodes: %d\t\t\t\tPercentage: %.2f%%\n", nReached, ((float) nReached / graph->getNumberOfNodes()) * 100);
-		env.out() << "**************************************************************************" << endl;
-
-		QueryPerformanceCounter(&t1);
-
-		//output << "model, parameter, nColumns, infCut, time, solutionValue, meanInversedWeight, minInversedWeight, maxInversedWeight, meanTreeSize, minTreeSize, maxTreeSize, pReached, nReached, solutionIDs, columnIDs, orderingBy, reachedIDs, ignored, comparison " << endl;
-		
-		output << modelNumber << "," << parameter << "," << initialC << "," << infCut << "," << time(&t1, &t0, &freq) << "," << solutionValue << ",";
-		output << (solutionIDs.size() != 0 ? (float)(sInversedWeight / solutionIDs.size()) : -1) << "," << minInversedWeight << "," << maxInversedWeight << ",";
-		output << (solutionIDs.size() != 0 ? (float)(sTreeSize / solutionIDs.size()) : -1) << "," << minTreeSize << "," << maxTreeSize << ",";
-		output << ((float)nReached / allowedNodes->getSize()) * 100 << "," << nReached << ",";
-		output << solutionIDs << "," << columnsIDs << "," << criteriaToString(criteria) << "," << reachedIDs << ",";
-		output << ssIgnored.str() << "," << (comparison ? "high" : "low") << endl;
-
+	}
+	catch (IloException& e){
+		cerr << e.getMessage() << endl;
 	}
 	cplex.end();
 	information.end();
 	objective.end();
+	previous.end();
+
+	cout << " > Finishing function solve" << endl;
 	return nReached;
 }
 
@@ -561,7 +571,6 @@ int run(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, Ilo
 	cout << " | maxInf : " << parameter << endl;
 	cout << " | nColumns : " << initialC << endl;
 	cout << " | Ordering by: " << criteriaToString(criteria) << endl;
-	ut.setBool(generatedColumns, allowedNodes->getSize(), false);
 	columns(graph, generatedColumns, allowedNodes, R, Z, W, infCut, initialC, criteria, modelNumber);
 	return solve(modelNumber, model, W, Z, R, solution, graph, allowedNodes, parameter, infCut, initialC, timelimit, path, generatedColumns, criteria);
 }
@@ -741,12 +750,20 @@ void greedyApproach(Graph *g, float infCut, int k, char type = 'c'){
 
 void createSolution(Graph *graph, Dictionary *allowedNodes, IloNumArray solution, int criteria, int amount){
 	vector<int> nodes;
+	ofstream output("createdByCriteria.txt", ios::app);
+	cout << " > Selecting " << amount << " better nodes based on criteria " << criteriaToString(criteria) << " ... ";
+	output << criteriaToString(criteria) << ",";
+	solution.clear();
 	graph->getInitialNodes(&nodes, allowedNodes, criteria, amount);
 	for (int i = 0; i < allowedNodes->getSize(); i++)
 		solution.add(0);
 	for (int node : nodes){
 		solution[allowedNodes->getIndexByNode(node)] = 1;
+		output << node << ";";
 	}
+	output << endl;
+	cout << "finished!" << endl;
+	cout << "> Allowed nodes size: " << allowedNodes->getSize() << " - Built solution: " << solution.getSize() << endl;
 }
 
 int main(int argc, char **argv){
@@ -765,11 +782,12 @@ int main(int argc, char **argv){
 	build(&graph, &allowedNodes, W, Z, R, T);
 
 	model.add(R);
+	
 	bool *generatedColumns = new bool[allowedNodes.getSize()];
 
 	int maxInf = 10;
 	int tlimit = 60;
-	int ncolumns = 10000;
+	int ncolumns = 5000;
 	string file = "newts.csv";
 	int value = 0;
 	float infCuts[] = { (float) 0.001, (float) 0.005, (float) 0.01, (float) 0.1 };
