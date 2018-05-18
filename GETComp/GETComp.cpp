@@ -787,16 +787,16 @@ int main(int argc, char **argv){
 
 	int maxInf = 10;
 	int tlimit = 60;
-	int ncolumns = 5000;
+	int ncolumns = 100;
 	string file = "newts.csv";
 	int value = 0;
 	float infCuts[] = { (float) 0.001, (float) 0.005, (float) 0.01, (float) 0.1 };
 
 	ofstream output("prettyOutput.txt", ios::app);
-	output << "maxinf, infCut, approach, amountReached, percentageReached" << endl;
+	//output << "maxinf, infCut, approach, amountReached, percentageReached" << endl;
 
 	for (int i = 0; i < 4; i++){
-		for (int j = 15; j > 0; j--){
+		for (int j = 11; j > 0; j--){
 
 			// our approach
 			run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, j, infCuts[i], ncolumns, tlimit, file, 0);
