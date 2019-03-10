@@ -716,7 +716,6 @@ int linearThreshold(Graph *g, vector<int> chosen_set, float infCut){
 
 	int *current_state = new int[g->getNumberOfNodes()];
 	float *sumOfWeights = new float[g->getNumberOfNodes()];
-
 	float *toBeAdded = new float[g->getNumberOfNodes()];
 
 	bool flag = true;
@@ -737,19 +736,18 @@ int linearThreshold(Graph *g, vector<int> chosen_set, float infCut){
 		}
 		adj.clear();
 	}
-
-
+	
 	int active_counter = 0, loop = 0;
 
 	while (flag){
 		flag = false;
 		for (int i = 0; i < g->getNumberOfNodes(); i++){
-			if (sumOfWeights[i] >= infCut){
+			if (sumOfWeights[i] >= infCut && current_state[i] == NOT_ACTIVE){
 				//cout << "Exploring " << i + 1 << "..." << endl;
 				current_state[i] = TO_BE_ACTIVE;
 				g->getAdjacency(&adj, i + 1);
 				for (int node : adj)
-					toBeAdded[i] = g->getWeight(node, i + 1);
+					toBeAdded[node - 1] += g->getWeight(node, i + 1);
 				adj.clear();
 			}
 		}
@@ -888,6 +886,12 @@ void createSolutionFromList(int *nodes, int numberOfNodes, IloNumArray solution,
 	}
 }
 
+void createListFromSolution(vector<int> *list, IloNumArray solution, Dictionary *allowedNodes){
+	for (int i = 0; i < solution.getSize(); i++)
+		if (solution[i] == 1)
+			list->push_back(allowedNodes->getNodeByIndex(i));	
+}
+
 int dominance(int node, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloRangeArray R, Graph *graph, Dictionary *allowedNodes, bool * generatedColumns, float infCut, int initialC, int criteria){
 	domNode = node;	
 	int counter = 0;
@@ -973,7 +977,7 @@ int main(int argc, char **argv){
 	float infCuts[] = { (float) 0.001, (float) 0.005, (float) 0.01, (float) 0.1 };
 	int criterion[] = { SIW, DEGREE, CLOSENESS, RADIAL };
 	
-	ofstream output("pretty.csv", ios::app);
+	ofstream output("comparsion_LT_IC.csv", ios::app);
 	//output << "model,maxinf,infCut,approach,amountReached,percentageReached" << endl;
 	
 	/*
@@ -1015,55 +1019,49 @@ int main(int argc, char **argv){
 		}
 	}*/
 
-	value = run(MODEL1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.5, ncolumns, tlimit, file, SIW);
-	value = run(MODEL2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.5, ncolumns, tlimit, file, SIW);
+	vector<int> ids; 
+	vector<int> ids_model;
+	int result = 0;
 
-	vector<int> test = { 202, 800, 1328, 2314, 2750, 2751, 2864, 4869, 5710, 5943, 6702, 8028, 9333, 10518, 10657, 13224, 14027, 14493, 16326, 16336, 17314, 17708, 18636, 21723, 24117, 24605, 29483, 29491, 47868, 49645, 50441, 57661, 59831, 62228, 62709, 66789, 72791, 73259, 78194, 94255, 95340, 96399, 97337, 99114, 99460, 99504, 99567, 100254, 105803, 107837, 108152, 109837, 111999, 116493, 116579, 118622, 119248, 120164, 121323, 123270, 123515, 125172, 125710, 126403, 130200, 131925, 133330, 135138, 137238, 138619, 139717, 140891, 146033, 148137, 148457, 149003, 157946, 169186, 169541, 172891, 173050, 176378, 178844, 191480, 191689, 193054, 201782, 204984, 209187, 212517, 214109, 222318, 230902, 248694, 265427, 309402, 319032, 327183, 329169, 378635 };
+	for (int maxInf = 10; maxInf <= 100; maxInf += 10){
 
-	cout << "Our model" << endl;
-	cout << "Linear Threshold" << endl;
-	linearThreshold(&graph, test, 0.001);
-	cout << "Independent Cascade" << endl;
-	cout << test << endl;
-	independentCascade(&graph, test, 0.5);
-	test.clear();
-	
-	cout << "Sum of inversed weights" << endl;
-	graph.getInitialNodes(&test, &allowedNodes, SIW, 100);
-	cout << "Independent Cascade" << endl;
-	//cout << test << endl;
-	independentCascade(&graph, test, 0.5);
-	cout << "Linear Threshold" << endl;
-	linearThreshold(&graph, test, 0.001);
-	test.clear();
-	
-	cout << "Degree" << endl;
-	graph.getInitialNodes(&test, &allowedNodes, DEGREE, 100);
-	cout << "Independent Cascade" << endl;
-	//cout << test << endl;
-	independentCascade(&graph, test, 0.5);
-	cout << "Linear Threshold" << endl;
-	linearThreshold(&graph, test, 0.001);
-	test.clear();
-	
+		value = run(MODEL1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, 0.01, ncolumns, tlimit, file, SIW);
+		value = run(MODEL2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, 0.01, ncolumns, tlimit, file, SIW);
+		createListFromSolution(&ids_model, solution, &allowedNodes);
 
-	cout << "Closeness" << endl;
-	graph.getInitialNodes(&test, &allowedNodes, CLOSENESS, 100);
-	cout << "Independent Cascade" << endl;
-	//cout << test << endl;
-	independentCascade(&graph, test, 0.5);
-	cout << "Linear Threshold" << endl;
-	linearThreshold(&graph, test, 0.001);
-	test.clear();
+		for (float i = 0.01; i < 1.0; i += 0.01){			
 
-	cout << "Radial" << endl;
-	graph.getInitialNodes(&test, &allowedNodes, RADIAL, 100);
-	cout << "Independent Cascade" << endl;
-	//cout << test << endl;
-	independentCascade(&graph, test, 0.5);
-	cout << "Linear Threshold" << endl;
-	linearThreshold(&graph, test, 0.001);
-	test.clear();
+			result = linearThreshold(&graph, ids_model, i);
+			output << "Our model;LT;" << i << ";" << result << endl;
+
+			for (int j = 0; j < 4; j++){
+				cout << criteriaToString(criterion[j]) << endl;
+				graph.getInitialNodes(&ids, &allowedNodes, criterion[j], maxInf);
+				result = linearThreshold(&graph, ids, i);
+				ids.clear();
+				output << criteriaToString(criterion[j]) << ";LT;" << i << ";" << result << ";" << maxInf << endl;
+			}
+		}
+
+		for (float i = 0.01; i < 1.0; i += 0.01){
+
+			
+			result = independentCascade(&graph, ids_model, i);
+			output << "Our model;IC;" << i << ";" << result << endl;
+
+			for (int j = 0; j < 4; j++){
+				cout << criteriaToString(criterion[j]) << endl;
+				graph.getInitialNodes(&ids, &allowedNodes, criterion[j], maxInf);
+				result = independentCascade(&graph, ids, i);
+				ids.clear();
+				output << criteriaToString(criterion[j]) << ";LT;" << i << ";" << result << ";" << maxInf << endl;
+			}
+		}
+
+		ids_model.clear();
+
+	}
+
 	
 	
 	ut.wait("aff");
