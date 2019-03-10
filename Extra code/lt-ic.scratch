@@ -1,0 +1,69 @@
+int independentCascade(Graph *g, list<int> chosen, int newnode, float infCut){
+	int sum = 0;
+	vector<int> partial;
+	Tree tree;
+	bool *setunion = new bool[g->getNumberOfNodes()];
+	ut.setBool(setunion, g->getNumberOfNodes(), false);
+	chosen.push_back(newnode);
+	cout << "#";
+	while (!chosen.empty()){
+		partial.push_back(chosen.front());
+		chosen.pop_front();
+	}
+	for (int node : partial){
+		g->breadthSearchW(&tree, node, infCut);
+		for (int i = 0; i < tree.getSize(); i++){
+			setunion[tree.nodes[i] - 1] = setunion[tree.nodes[i] - 1] && tree.info[i];
+		}
+	}
+
+	for (int i = 0; i < g->getNumberOfNodes(); i++){
+		sum += setunion[i];
+	}
+	
+	return sum;
+}
+
+int linearThreshold(Graph *g, list<int> chosen, int newnode, float infCut){
+	bool change = true;
+	int sum = 0;
+	vector<int> adj;
+	float *sumWeights = new float[g->getNumberOfNodes()];
+	float *previousSumWeights = new float[g->getNumberOfNodes()];
+	vector<int> current;
+	for (int c = 0; c < g->getNumberOfNodes(); c++){
+		sumWeights[c] = 0;
+		previousSumWeights[c] = 0;
+	}
+	cout << "Linear Threshold Model" << endl;
+	while (!chosen.empty()){
+		current.push_back(chosen.front());
+		previousSumWeights[chosen.front() - 1] = 1;
+		chosen.pop_front();
+	}
+	while (change){
+
+		change = false;
+		for (int i = 0; i < g->getNumberOfNodes(); i++)
+			previousSumWeights[i] = sumWeights[i];
+
+		for(int node : current){
+			g->getAdjacency(&adj, node);
+			for (int a : adj){
+				sumWeights[a - 1] += g->getWeight(a, node)*(previousSumWeights[node - 1] > infCut? 1 : 0);
+			}
+		}
+
+		sum += (int) current.size();
+		current.clear();
+
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			if (previousSumWeights[i] == 0 && sumWeights[i] != 0){
+				current.push_back(i + 1);
+				change = true;
+			}
+		}
+
+	}
+	return sum;
+}

@@ -14,11 +14,19 @@
 #include <time.h>
 #define HI +99999 // positive infinite
 #define LI -99999 // negative infinite
+#define MODEL1 1
+#define MODEL2 2
+#define FIXED_SOLUTION_MODEL 5
+
+#define NOT_ACTIVE 0
+#define ACTIVE 1
+#define DONE 2
+#define TO_BE_ACTIVE 3
 
 using namespace std;
 
 /*
-	Temp variables
+	Dominance related variables
 */
 int execCounter = 0;
 bool flag = false;
@@ -43,7 +51,7 @@ ostream& operator<<(ostream& os, const vector<int>& elements){
 	for (int i = 0; i < elements.size(); i++){
 		os << elements[i];
 		if(i != elements.size()-1) 
-			os << ";";
+			os << "|";
 	}
 	os << "}";
 	return os;
@@ -452,9 +460,9 @@ int solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, I
 		LB variables
 	*/
 	IloRange localB(env, 0, IloInfinity, "localB");
-	int lbRadius = parameter;
+	int lbRadius = (int) parameter;
 	int lbPreviousSolution = LI;
-	int lbMaxNumIteration = 5;
+	int lbMaxNumIteration = 1;
 	int lbCounterWOImprov = 0;
 	int lbCounter = 0;
 	
@@ -574,14 +582,14 @@ int solve(int modelNumber, IloModel model, IloNumVarArray W, IloNumVarArray Z, I
 
 			QueryPerformanceCounter(&t1);
 
-			//output << "model, parameter, nColumns, infCut, time, solutionValue, meanInversedWeight, minInversedWeight, maxInversedWeight, meanTreeSize, minTreeSize, maxTreeSize, pReached, nReached, solutionIDs, columnIDs, orderingBy, reachedIDs, ignored, comparison " << endl;
+			//output << "model, parameter, nColumns, infCut, time, solutionValue, meanInversedWeight, minInversedWeight, maxInversedWeight, meanTreeSize, minTreeSize, maxTreeSize, pReached, nReached, solutionIDs, comparison, orderingBy, columnIDs, reachedIDs, ignored" << endl;
 
 			output << modelNumber << "," << parameter << "," << initialC << "," << infCut << "," << time(&t1, &t0, &freq) << "," << solutionValue << ",";
 			output << (solutionIDs.size() != 0 ? (float)(sInversedWeight / solutionIDs.size()) : -1) << "," << minInversedWeight << "," << maxInversedWeight << ",";
 			output << (solutionIDs.size() != 0 ? (float)(sTreeSize / solutionIDs.size()) : -1) << "," << minTreeSize << "," << maxTreeSize << ",";
 			output << ((float)nReached / graph->getNumberOfNodes()) * 100 << "," << nReached << ",";
-			output << solutionIDs << "," << columnsIDs << "," << criteriaToString(criteria) << "," << reachedIDs << ",";
-			output << ssIgnored.str() << "," << (comparison ? "high" : "low") << endl;
+			output << solutionIDs << "," << (comparison ? "high" : "low") << "," << criteriaToString(criteria) << "," << columnsIDs << ",";
+			output << reachedIDs << "," <<ssIgnored.str() << endl;
 
 		}
 
@@ -704,105 +712,155 @@ void createIgnored(Graph *graph, Dictionary *allowedNodes, int c1, int c2, int n
 	}
 }
 
-int independentCascade(Graph *g, list<int> chosen, int newnode, float infCut){
-	int sum = 0;
-	vector<int> partial;
-	Tree tree;
-	bool *setunion = new bool[g->getNumberOfNodes()];
-	ut.setBool(setunion, g->getNumberOfNodes(), false);
-	chosen.push_back(newnode);
-	cout << "#";
-	while (!chosen.empty()){
-		partial.push_back(chosen.front());
-		chosen.pop_front();
-	}
-	for (int node : partial){
-		g->breadthSearchW(&tree, node, infCut);
-		for (int i = 0; i < tree.getSize(); i++){
-			setunion[tree.nodes[i] - 1] = setunion[tree.nodes[i] - 1] && tree.info[i];
-		}
-	}
+int linearThreshold(Graph *g, vector<int> chosen_set, float infCut){
+
+	int *current_state = new int[g->getNumberOfNodes()];
+	float *sumOfWeights = new float[g->getNumberOfNodes()];
+
+	float *toBeAdded = new float[g->getNumberOfNodes()];
+
+	bool flag = true;
+	vector<int> adj;
 
 	for (int i = 0; i < g->getNumberOfNodes(); i++){
-		sum += setunion[i];
+		current_state[i] = NOT_ACTIVE;
+		sumOfWeights[i] = 0;
+		toBeAdded[i] = 0;
 	}
-	
-	return sum;
-}
 
-int linearThreshold(Graph *g, list<int> chosen, int newnode, float infCut){
-	bool change = true;
-	int sum = 0;
-	vector<int> adj;
-	float *sumWeights = new float[g->getNumberOfNodes()];
-	float *previousSumWeights = new float[g->getNumberOfNodes()];
-	vector<int> current;
-	for (int c = 0; c < g->getNumberOfNodes(); c++){
-		sumWeights[c] = 0;
-		previousSumWeights[c] = 0;
-	}
-	cout << "Linear Threshold Model" << endl;
-	while (!chosen.empty()){
-		current.push_back(chosen.front());
-		previousSumWeights[chosen.front() - 1] = 1;
-		chosen.pop_front();
-	}
-	while (change){
 
-		change = false;
-		for (int i = 0; i < g->getNumberOfNodes(); i++)
-			previousSumWeights[i] = sumWeights[i];
-
-		for(int node : current){
-			g->getAdjacency(&adj, node);
-			for (int a : adj){
-				sumWeights[a - 1] += g->getWeight(a, node)*(previousSumWeights[node - 1] > infCut? 1 : 0);
-			}
+	for (int node : chosen_set){
+		current_state[node - 1] = ACTIVE;
+		g->getAdjacency(&adj, node);
+		for (int anode : adj){
+			sumOfWeights[anode - 1] += g->getWeight(node, anode);
 		}
+		adj.clear();
+	}
 
-		sum += (int) current.size();
-		current.clear();
 
+	int active_counter = 0, loop = 0;
+
+	while (flag){
+		flag = false;
 		for (int i = 0; i < g->getNumberOfNodes(); i++){
-			if (previousSumWeights[i] == 0 && sumWeights[i] != 0){
-				current.push_back(i + 1);
-				change = true;
+			if (sumOfWeights[i] >= infCut){
+				//cout << "Exploring " << i + 1 << "..." << endl;
+				current_state[i] = TO_BE_ACTIVE;
+				g->getAdjacency(&adj, i + 1);
+				for (int node : adj)
+					toBeAdded[i] = g->getWeight(node, i + 1);
+				adj.clear();
 			}
 		}
 
+		active_counter = 0;
+		loop++;
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			if (current_state[i] == TO_BE_ACTIVE){
+				current_state[i] = ACTIVE;
+				flag = true;
+				active_counter++;
+			}
+			sumOfWeights[i] += toBeAdded[i];
+			toBeAdded[i] = 0;
+		}
+		cout << "Active at iteration " << loop << ": " << active_counter << endl;
 	}
-	return sum;
-}
 
-void greedyApproach(Graph *g, float infCut, int k, char type = 'c'){
 	int count = 0;
-	int sum = 0;
-	int highestSum = 0;
-	int highestSumNode = -1;
-	list<int> set;
-	while (count < k){
-		cout << "Looking for node with highest sum... " << endl;
-		for (int i = 0; i < g->getNumberOfNodes(); i++){
-			switch (type) {
-				case 't': sum = linearThreshold(g, set, i + 1, infCut); break;
-				case 'c': sum = independentCascade(g, set, i + 1, infCut); break;
-				default: exit(0);
-			}
-			
-			if (sum > highestSum){
-				highestSum = sum;
-				highestSumNode = i + 1;
-			}
-		}
-		cout << highestSumNode << " found" << endl;
-		set.push_back(highestSumNode);
-	}
-	cout << "Set: ";
-	while (!set.empty()){
-		cout << set.front() << " | ";
-		set.pop_front();
-	}
+	for (int i = 0; i < g->getNumberOfNodes(); i++)
+		if (current_state[i] == ACTIVE)
+			count++;
+
+	cout << count << "\n";
+
+	return count;
 }
+
+int independentCascade(Graph *g, vector<int> chosen_set, float infCut){
+
+	int *current_state = new int[g->getNumberOfNodes()];
+
+	bool flag = true;
+	vector<int> adj;
+
+	for (int i = 0; i < g->getNumberOfNodes(); i++)
+		current_state[i] = NOT_ACTIVE;
+
+	for (int node : chosen_set){
+		current_state[node - 1] = ACTIVE;
+	}
+
+	int active_counter = 0, loop = 0;
+
+	while (flag){
+		flag = false;
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			if (current_state[i] == ACTIVE){
+				//cout << "Exploring " << i + 1 << "..." << endl;
+				current_state[i] = DONE;
+				g->getAdjacency(&adj, i+1);
+				for (int node : adj)
+					if (g->getWeight(node, i + 1) >= infCut && current_state[node - 1] == NOT_ACTIVE)
+						current_state[node - 1] = TO_BE_ACTIVE;
+					
+				
+				adj.clear();
+			}
+		}				
+
+		active_counter = 0;
+		loop++;
+		for (int i = 0; i < g->getNumberOfNodes(); i++){
+			if (current_state[i] == TO_BE_ACTIVE){
+				current_state[i] = ACTIVE;
+				flag = true;
+				active_counter++;
+			}
+		}		
+		cout << "Active at iteration " << loop <<  ": " << active_counter << endl;
+	}
+
+	int count = 0;
+	for (int i = 0; i < g->getNumberOfNodes(); i++)
+		if (current_state[i] == DONE)
+			count++;
+
+	cout << count << "\n";
+
+	return count;
+}
+
+//void greedyApproach(Graph *g, float infCut, int k, char type = 'c'){
+//	int count = 0;
+//	int sum = 0;
+//	int highestSum = 0;
+//	int highestSumNode = -1;
+//	list<int> set;
+//	while (count < k){
+//		cout << "Looking for node with highest sum... " << endl;
+//		for (int i = 0; i < g->getNumberOfNodes(); i++){
+//			switch (type) {
+//				case 't': sum = linearThreshold(g, set, i + 1, infCut); break;
+//				case 'c': sum = independentCascade(g, set, i + 1, infCut); break;
+//				default: exit(0);
+//			}
+//			
+//			if (sum > highestSum){
+//				highestSum = sum;
+//				highestSumNode = i + 1;
+//			}
+//		}
+//		cout << highestSumNode << " found" << endl;
+//		set.push_back(highestSumNode);
+//	}
+//	cout << "Set: ";
+//	while (!set.empty()){
+//		cout << set.front() << " | ";
+//		set.pop_front();
+//	}
+//}
 
 void createSolution(Graph *graph, Dictionary *allowedNodes, IloNumArray solution, int criteria, int amount){
 	vector<int> nodes;
@@ -861,7 +919,7 @@ int dominance(int node, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloR
 				if (generatedColumns[i])
 					total += 1;
 				if (generatedColumns[i] && valuesZ[i] == 1){
-					//cout << "z" << node << " domina z" << allowedNodes->getNodeByIndex(i) << endl;
+					cout << "z" << node << " domina z" << allowedNodes->getNodeByIndex(i) << endl;
 					counter += 1;
 				}
 				//if (generatedColumns[i] && valuesZ[i] == 0)
@@ -882,7 +940,7 @@ int dominance(int node, IloModel model, IloNumVarArray W, IloNumVarArray Z, IloR
 	model.remove(conversion);
 
 	if (previousCoefType == -1)
-		previousCoefType == 0;
+		previousCoefType = 0;
 	else
 		previousCoefType = !previousCoefType;
 	
@@ -909,37 +967,104 @@ int main(int argc, char **argv){
 	bool *generatedColumns = new bool[allowedNodes.getSize()];
 
 	int tlimit = 4*60;
-	int ncolumns = 100;
-	string file = "newts.csv";
+	int ncolumns = 10000;//allowedNodes.getSize();
+	string file = "results.csv";
 	int value = 0;
 	float infCuts[] = { (float) 0.001, (float) 0.005, (float) 0.01, (float) 0.1 };
-	int criterion[] = { 1, 3, 6 };
+	int criterion[] = { SIW, DEGREE, CLOSENESS, RADIAL };
 	
-	//vector<int> nodesToCheck;
-	//graph.getInitialNodes(&nodesToCheck, &allowedNodes, SIW, ncolumns);
-	//for (int node : nodesToCheck){
-	//	value = dominance(node, model, W, Z, R, &graph, &allowedNodes, generatedColumns, infCut, ncolumns, SIW);
-	//}
+	ofstream output("pretty.csv", ios::app);
+	//output << "model,maxinf,infCut,approach,amountReached,percentageReached" << endl;
 	
-	//value = run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
-	//value = run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
+	/*
+		base test!
 	
-	ofstream output("prettyinfoINFCUT.txt", ios::app);
-	output << "maxinf,infCut,approach,amountReached,percentageReached" << endl;
-	IloNumArray temp(env);
+	value = run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
+	value = run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
+	output << maxInf << "," << infCut << ",MIP," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
+	solution.clear();
+	for (int i = 0; i < 3; i++){
+		createSolution(&graph, &allowedNodes, solution, criterion[i], (int) maxInf);
+		value = run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
+		output << maxInf << "," << infCut << "," << criteriaToString(criterion[i]) << "," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
+	}*/
 
-	float infCut = 0.001;
-	int maxInf = 10;
+	/*
+		Calculates the solution for the heuristics approaches
+	*/
 
-	for (float infCut = 0.001; infCut <= 0.101; infCut += 0.01){
-		for (int i = 0; i < 3; i++){
-			createSolution(&graph, &allowedNodes, solution, criterion[i], maxInf);
-			value = run(5, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
-			output << maxInf << "," << infCut << "," << criteriaToString(criterion[i]) << "," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
+	/*for (float infCut = 0.1; infCut < 1; infCut += 0.1){
+		for (int maxInf = 10; maxInf < 100; maxInf += 10){
+			for (int w = 0; w < 4; w++){
+				createSolution(&graph, &allowedNodes, solution, criterion[w], (int) maxInf);
+				value = run(FIXED_SOLUTION_MODEL, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, (float)maxInf, infCut, ncolumns, tlimit, file, SIW, false);
+				output << FIXED_SOLUTION_MODEL << "," << maxInf << "," << infCut << "," << criteriaToString(criterion[w]) << "," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
+			}
 		}
-		solution.clear();
-		value = run(1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW);
-		value = run(2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, maxInf, infCut, ncolumns, tlimit, file, SIW, true);
-		output << maxInf << "," << infCut << ",MIP," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
-	}
+	}*/
+
+	/*
+		Calculates the solution for our approach 
+	*/
+
+	/*for (float infCut = 0.1; infCut < 1; infCut += 0.1){
+		for (int maxInf = 10; maxInf < 200; maxInf += 10){
+			value = run(MODEL1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, (float) maxInf, infCut, ncolumns, tlimit, file, SIW);
+			value = run(MODEL2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, (float) maxInf, infCut, ncolumns, tlimit, file, SIW);
+			output << "1|2," << maxInf << "," << infCut << ",MIP," << value << "," << (float)value / (float)graph.getNumberOfNodes() << endl;
+		}
+	}*/
+
+	value = run(MODEL1, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.5, ncolumns, tlimit, file, SIW);
+	value = run(MODEL2, model, W, Z, R, solution, &graph, &allowedNodes, generatedColumns, 15, 0.5, ncolumns, tlimit, file, SIW);
+
+	vector<int> test = { 202, 800, 1328, 2314, 2750, 2751, 2864, 4869, 5710, 5943, 6702, 8028, 9333, 10518, 10657, 13224, 14027, 14493, 16326, 16336, 17314, 17708, 18636, 21723, 24117, 24605, 29483, 29491, 47868, 49645, 50441, 57661, 59831, 62228, 62709, 66789, 72791, 73259, 78194, 94255, 95340, 96399, 97337, 99114, 99460, 99504, 99567, 100254, 105803, 107837, 108152, 109837, 111999, 116493, 116579, 118622, 119248, 120164, 121323, 123270, 123515, 125172, 125710, 126403, 130200, 131925, 133330, 135138, 137238, 138619, 139717, 140891, 146033, 148137, 148457, 149003, 157946, 169186, 169541, 172891, 173050, 176378, 178844, 191480, 191689, 193054, 201782, 204984, 209187, 212517, 214109, 222318, 230902, 248694, 265427, 309402, 319032, 327183, 329169, 378635 };
+
+	cout << "Our model" << endl;
+	cout << "Linear Threshold" << endl;
+	linearThreshold(&graph, test, 0.001);
+	cout << "Independent Cascade" << endl;
+	cout << test << endl;
+	independentCascade(&graph, test, 0.5);
+	test.clear();
+	
+	cout << "Sum of inversed weights" << endl;
+	graph.getInitialNodes(&test, &allowedNodes, SIW, 100);
+	cout << "Independent Cascade" << endl;
+	//cout << test << endl;
+	independentCascade(&graph, test, 0.5);
+	cout << "Linear Threshold" << endl;
+	linearThreshold(&graph, test, 0.001);
+	test.clear();
+	
+	cout << "Degree" << endl;
+	graph.getInitialNodes(&test, &allowedNodes, DEGREE, 100);
+	cout << "Independent Cascade" << endl;
+	//cout << test << endl;
+	independentCascade(&graph, test, 0.5);
+	cout << "Linear Threshold" << endl;
+	linearThreshold(&graph, test, 0.001);
+	test.clear();
+	
+
+	cout << "Closeness" << endl;
+	graph.getInitialNodes(&test, &allowedNodes, CLOSENESS, 100);
+	cout << "Independent Cascade" << endl;
+	//cout << test << endl;
+	independentCascade(&graph, test, 0.5);
+	cout << "Linear Threshold" << endl;
+	linearThreshold(&graph, test, 0.001);
+	test.clear();
+
+	cout << "Radial" << endl;
+	graph.getInitialNodes(&test, &allowedNodes, RADIAL, 100);
+	cout << "Independent Cascade" << endl;
+	//cout << test << endl;
+	independentCascade(&graph, test, 0.5);
+	cout << "Linear Threshold" << endl;
+	linearThreshold(&graph, test, 0.001);
+	test.clear();
+	
+	
+	ut.wait("aff");
 }
